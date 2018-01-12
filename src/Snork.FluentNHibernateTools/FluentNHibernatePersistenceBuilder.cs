@@ -83,6 +83,22 @@ namespace Snork.FluentNHibernateTools
             IPersistenceConfigurer configurer;
             switch (providerType)
             {
+                case ProviderTypeEnum.SQLAnywhere9:
+                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere9, connectionString,
+                        options.DefaultSchema);
+                    break;
+                case ProviderTypeEnum.SQLAnywhere10:
+                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere10, connectionString,
+                        options.DefaultSchema);
+                    break;
+                case ProviderTypeEnum.SQLAnywhere11:
+                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere11, connectionString,
+                        options.DefaultSchema);
+                    break;
+                case ProviderTypeEnum.SQLAnywhere12:
+                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere12, connectionString,
+                        options.DefaultSchema);
+                    break;
                 case ProviderTypeEnum.SQLite:
                     configurer = ConfigureProvider(() => SQLiteConfiguration.Standard, connectionString,
                         options.DefaultSchema);

@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Web.Script.Serialization;
 using FluentNHibernate.Cfg;
+using FluentNHibernate.Cfg.Db;
 using NHibernate.Tool.hbm2ddl;
 
 namespace Snork.FluentNHibernateTools
@@ -13,7 +14,7 @@ namespace Snork.FluentNHibernateTools
     {
         private static readonly object Mutex = new object();
 
-        private static readonly Dictionary<string, SessionFactoryInfo> _sessionFactoryInfos =
+        private static readonly Dictionary<string, SessionFactoryInfo> SessionFactoryInfos =
             new Dictionary<string, SessionFactoryInfo>();
 
         private static string CalculateMD5Hash(string input)
@@ -42,50 +43,100 @@ namespace Snork.FluentNHibernateTools
 
         public static SessionFactoryInfo GetByKey(string key)
         {
-            return _sessionFactoryInfos[key];
+            lock (Mutex)
+            {
+                return SessionFactoryInfos[key];
+            }
+        }
+
+        public static SessionFactoryInfo GetFromAssemblyOf<T>(IPersistenceConfigurer configurer,
+            FluentNHibernatePersistenceBuilderOptions options = null)
+        {
+            options = options ?? new FluentNHibernatePersistenceBuilderOptions();
+            var providerType = ProviderTypeHelper.InferProviderType(configurer);
+            var derivedInfo = PersistenceConfigurationHelper.GetDerivedConnectionInfo(configurer);
+            if (derivedInfo == null)
+            {
+                throw new ArgumentException("Could not derive connection string info from configurer");
+            }
+            options.DefaultSchema = derivedInfo.DefaultSchema;
+            Func<ConfigurationInfo> configFunc = () => new ConfigurationInfo(configurer, options, providerType);
+            var keyInfo = new KeyInfo
+            {
+                ProviderType = providerType,
+                NameOrConnectionString = derivedInfo.ConnectionString,
+                options = options,
+                TypeFullName = typeof(T).FullName
+            };
+            return GetSessionFactoryInfo<T>(options, keyInfo, providerType, configFunc);
+        }
+
+        private static SessionFactoryInfo GetSessionFactoryInfo<T>(FluentNHibernatePersistenceBuilderOptions options,
+            KeyInfo keyInfo,
+            ProviderTypeEnum providerType, Func<ConfigurationInfo> configFunc)
+        {
+            var key = CalculateMD5Hash(new JavaScriptSerializer().Serialize(keyInfo));
+
+            lock (Mutex)
+            {
+                if (SessionFactoryInfos.ContainsKey(key))
+                {
+                    return SessionFactoryInfos[key];
+                }
+                var configurationInfo = configFunc();
+                var configurationInfoPersistenceConfigurer = configurationInfo.PersistenceConfigurer;
+                var fluentConfiguration = Fluently.Configure()
+                    .Mappings(x => x.FluentMappings.AddFromAssemblyOf<T>())
+                    .Database(configurationInfoPersistenceConfigurer);
+                fluentConfiguration.ExposeConfiguration(cfg =>
+                {
+                    if (options.UpdateSchema)
+                    {
+                        var schemaUpdate = new SchemaUpdate(cfg);
+                        using (var stringWriter = new StringWriter())
+                        {
+                            try
+                            {
+                                schemaUpdate.Execute(i => stringWriter.WriteLine(i), true);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw;
+                            }
+                            var d = stringWriter.ToString();
+                        }
+                    }
+                });
+                fluentConfiguration.BuildConfiguration();
+                SessionFactoryInfos[key] = new SessionFactoryInfo(key, fluentConfiguration.BuildSessionFactory(),
+                    providerType, options);
+                return SessionFactoryInfos[key];
+            }
         }
 
         public static SessionFactoryInfo GetFromAssemblyOf<T>(ProviderTypeEnum providerType,
             string nameOrConnectionString,
-            FluentNHibernatePersistenceBuilderOptions options)
+            FluentNHibernatePersistenceBuilderOptions options = null)
         {
-            var keyInfo = new {providerType, nameOrConnectionString, options};
-            var key = CalculateMD5Hash(new JavaScriptSerializer().Serialize(keyInfo));
-            lock (Mutex)
+            options = options ?? new FluentNHibernatePersistenceBuilderOptions();
+            Func<ConfigurationInfo> configFunc = () => FluentNHibernatePersistenceBuilder.Build(providerType,
+                nameOrConnectionString, options);
+            var keyInfo = new KeyInfo
             {
-                if (!_sessionFactoryInfos.ContainsKey(key))
-                {
-                    var configurationInfo = FluentNHibernatePersistenceBuilder.Build(providerType,
-                        nameOrConnectionString, options);
+                ProviderType = providerType,
+                NameOrConnectionString = nameOrConnectionString,
+                options = options,
+                TypeFullName = typeof(T).FullName
+            };
+            return GetSessionFactoryInfo<T>(options, keyInfo, providerType, configFunc);
+        }
 
-                    var fluentConfiguration = Fluently.Configure()
-                        .Mappings(x => x.FluentMappings.AddFromAssemblyOf<T>())
-                        .Database(configurationInfo.PersistenceConfigurer);
-                    fluentConfiguration.ExposeConfiguration(cfg =>
-                    {
-                        if (options.UpdateSchema)
-                        {
-                            var a = new SchemaUpdate(cfg);
-                            using (var stringWriter = new StringWriter())
-                            {
-                                try
-                                {
-                                    a.Execute(i => stringWriter.WriteLine(i), true);
-                                }
-                                catch (Exception ex)
-                                {
-                                    throw;
-                                }
-                                var d = stringWriter.ToString();
-                            }
-                        }
-                    });
-                    fluentConfiguration.BuildConfiguration();
-                    _sessionFactoryInfos[key] = new SessionFactoryInfo(key, fluentConfiguration.BuildSessionFactory(),
-                        providerType, options);
-                }
-                return _sessionFactoryInfos[key];
-            }
+        private class KeyInfo
+        {
+            public ProviderTypeEnum ProviderType { get; set; }
+            public string NameOrConnectionString { get; set; }
+            public string TypeFullName { get; set; }
+            public FluentNHibernatePersistenceBuilderOptions options { get; set; }
         }
     }
 }

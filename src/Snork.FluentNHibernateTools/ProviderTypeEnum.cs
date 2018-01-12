@@ -5,7 +5,7 @@
         None = 0,
         SQLite = 1,
         MsSqlCe40 = 2,
-        b = 200,
+      
         JetDriver = 207,
         OracleClient10 = 3,
         OracleClient9 = 4,
@@ -22,6 +22,10 @@
         MsSql2005 = 15,
         MsSql2000 = 16,
         OracleClient10Managed = 17,
-        OracleClient9Managed = 18
+        OracleClient9Managed = 18,
+        SQLAnywhere9 = 19,
+        SQLAnywhere10 = 20,
+        SQLAnywhere11 = 21,
+        SQLAnywhere12= 22,
     }
 }
