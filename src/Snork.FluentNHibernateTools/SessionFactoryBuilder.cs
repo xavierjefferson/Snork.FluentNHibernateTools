@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web.Script.Serialization;
@@ -34,9 +36,7 @@ namespace Snork.FluentNHibernateTools
 
             for (var i = 0; i < hash.Length; i++)
 
-            {
                 sb.Append(hash[i].ToString("X2"));
-            }
 
             return sb.ToString();
         }
@@ -52,13 +52,18 @@ namespace Snork.FluentNHibernateTools
         public static SessionFactoryInfo GetFromAssemblyOf<T>(IPersistenceConfigurer configurer,
             FluentNHibernatePersistenceBuilderOptions options = null)
         {
+            return GetFromAssemblies(new List<Assembly> {typeof(T).Assembly}, configurer, options);
+        }
+
+        public static SessionFactoryInfo GetFromAssemblies(List<Assembly> sourceAssemblies,
+            IPersistenceConfigurer configurer,
+            FluentNHibernatePersistenceBuilderOptions options = null)
+        {
             options = options ?? new FluentNHibernatePersistenceBuilderOptions();
             var providerType = ProviderTypeHelper.InferProviderType(configurer);
             var derivedInfo = PersistenceConfigurationHelper.GetDerivedConnectionInfo(configurer);
             if (derivedInfo == null)
-            {
                 throw new ArgumentException("Could not derive connection string info from configurer");
-            }
             options.DefaultSchema = derivedInfo.DefaultSchema;
             Func<ConfigurationInfo> configFunc = () => new ConfigurationInfo(configurer, options, providerType);
             var keyInfo = new KeyInfo
@@ -66,12 +71,13 @@ namespace Snork.FluentNHibernateTools
                 ProviderType = providerType,
                 NameOrConnectionString = derivedInfo.ConnectionString,
                 options = options,
-                TypeFullName = typeof(T).FullName
+                AssemblyNames = string.Join(",", sourceAssemblies.Distinct().OrderBy(i => i.FullName))
             };
-            return GetSessionFactoryInfo<T>(options, keyInfo, providerType, configFunc);
+            return GetSessionFactoryInfo(sourceAssemblies, options, keyInfo, providerType, configFunc);
         }
 
-        private static SessionFactoryInfo GetSessionFactoryInfo<T>(FluentNHibernatePersistenceBuilderOptions options,
+        private static SessionFactoryInfo GetSessionFactoryInfo(List<Assembly> sourceAssemblies,
+            FluentNHibernatePersistenceBuilderOptions options,
             KeyInfo keyInfo,
             ProviderTypeEnum providerType, Func<ConfigurationInfo> configFunc)
         {
@@ -80,15 +86,13 @@ namespace Snork.FluentNHibernateTools
             lock (Mutex)
             {
                 if (SessionFactoryInfos.ContainsKey(key))
-                {
                     return SessionFactoryInfos[key];
-                }
                 var configurationInfo = configFunc();
                 var configurationInfoPersistenceConfigurer = configurationInfo.PersistenceConfigurer;
-                var fluentConfiguration = Fluently.Configure()
-                    .Mappings(x => x.FluentMappings.AddFromAssemblyOf<T>())
-                    .Database(configurationInfoPersistenceConfigurer);
-                fluentConfiguration.ExposeConfiguration(cfg =>
+                var configuration = Fluently.Configure().Database(configurationInfoPersistenceConfigurer);
+                foreach (var assembly in sourceAssemblies)
+                    configuration = configuration.Mappings(x => x.FluentMappings.AddFromAssembly(assembly));
+                configuration.ExposeConfiguration(cfg =>
                 {
                     if (options.UpdateSchema)
                     {
@@ -107,14 +111,24 @@ namespace Snork.FluentNHibernateTools
                         }
                     }
                 });
-                fluentConfiguration.BuildConfiguration();
-                SessionFactoryInfos[key] = new SessionFactoryInfo(key, fluentConfiguration.BuildSessionFactory(),
+                configuration.BuildConfiguration();
+                SessionFactoryInfos[key] = new SessionFactoryInfo(key, configuration.BuildSessionFactory(),
                     providerType, options);
                 return SessionFactoryInfos[key];
             }
         }
 
+
         public static SessionFactoryInfo GetFromAssemblyOf<T>(ProviderTypeEnum providerType,
+            string nameOrConnectionString,
+            FluentNHibernatePersistenceBuilderOptions options = null)
+        {
+            return GetFromAssemblies(new List<Assembly> {typeof(T).Assembly}, providerType, nameOrConnectionString,
+                options);
+        }
+
+        public static SessionFactoryInfo GetFromAssemblies(List<Assembly> sourceAssemblies,
+            ProviderTypeEnum providerType,
             string nameOrConnectionString,
             FluentNHibernatePersistenceBuilderOptions options = null)
         {
@@ -126,16 +140,16 @@ namespace Snork.FluentNHibernateTools
                 ProviderType = providerType,
                 NameOrConnectionString = nameOrConnectionString,
                 options = options,
-                TypeFullName = typeof(T).FullName
+                AssemblyNames = string.Join(",", sourceAssemblies.Distinct().OrderBy(i => i.FullName))
             };
-            return GetSessionFactoryInfo<T>(options, keyInfo, providerType, configFunc);
+            return GetSessionFactoryInfo(sourceAssemblies, options, keyInfo, providerType, configFunc);
         }
 
         private class KeyInfo
         {
             public ProviderTypeEnum ProviderType { get; set; }
             public string NameOrConnectionString { get; set; }
-            public string TypeFullName { get; set; }
+            public string AssemblyNames { get; set; }
             public FluentNHibernatePersistenceBuilderOptions options { get; set; }
         }
     }
