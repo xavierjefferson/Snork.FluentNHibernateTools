@@ -34,9 +34,8 @@ namespace Snork.FluentNHibernateTools
 
             var sb = new StringBuilder();
 
-            for (var i = 0; i < hash.Length; i++)
-
-                sb.Append(hash[i].ToString("X2"));
+            foreach (var t in hash)
+                sb.Append(t.ToString("X2"));
 
             return sb.ToString();
         }
@@ -70,7 +69,7 @@ namespace Snork.FluentNHibernateTools
             {
                 ProviderType = providerType,
                 NameOrConnectionString = derivedInfo.ConnectionString,
-                options = options,
+                Options = options,
                 AssemblyNames = string.Join(",", sourceAssemblies.Distinct().OrderBy(i => i.FullName))
             };
             return GetSessionFactoryInfo(sourceAssemblies, options, keyInfo, providerType, configFunc);
@@ -92,25 +91,18 @@ namespace Snork.FluentNHibernateTools
                 var configuration = Fluently.Configure().Database(configurationInfoPersistenceConfigurer);
                 foreach (var assembly in sourceAssemblies)
                     configuration = configuration.Mappings(x => x.FluentMappings.AddFromAssembly(assembly));
-                configuration.ExposeConfiguration(cfg =>
+                if (options.UpdateSchema)
                 {
-                    if (options.UpdateSchema)
+                    configuration.ExposeConfiguration(cfg =>
                     {
                         var schemaUpdate = new SchemaUpdate(cfg);
                         using (var stringWriter = new StringWriter())
                         {
-                            try
-                            {
-                                schemaUpdate.Execute(i => stringWriter.WriteLine(i), true);
-                            }
-                            catch (Exception ex)
-                            {
-                                throw;
-                            }
-                            var d = stringWriter.ToString();
+                            schemaUpdate.Execute(i => stringWriter.WriteLine(i), true);
                         }
-                    }
-                });
+                    });
+                }
+
                 configuration.BuildConfiguration();
                 SessionFactoryInfos[key] = new SessionFactoryInfo(key, configuration.BuildSessionFactory(),
                     providerType, options);
@@ -139,7 +131,7 @@ namespace Snork.FluentNHibernateTools
             {
                 ProviderType = providerType,
                 NameOrConnectionString = nameOrConnectionString,
-                options = options,
+                Options = options,
                 AssemblyNames = string.Join(",", sourceAssemblies.Distinct().OrderBy(i => i.FullName))
             };
             return GetSessionFactoryInfo(sourceAssemblies, options, keyInfo, providerType, configFunc);
@@ -150,7 +142,7 @@ namespace Snork.FluentNHibernateTools
             public ProviderTypeEnum ProviderType { get; set; }
             public string NameOrConnectionString { get; set; }
             public string AssemblyNames { get; set; }
-            public FluentNHibernatePersistenceBuilderOptions options { get; set; }
+            public FluentNHibernatePersistenceBuilderOptions Options { get; set; }
         }
     }
 }

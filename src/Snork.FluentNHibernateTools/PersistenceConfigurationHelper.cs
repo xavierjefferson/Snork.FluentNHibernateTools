@@ -34,9 +34,11 @@ namespace Snork.FluentNHibernateTools
                             result.DefaultSchema = connectionString[Tmp.DefaultSchemaKey];
                         }
                     }
+
                     return result;
                 }
             }
+
             return null;
         }
 

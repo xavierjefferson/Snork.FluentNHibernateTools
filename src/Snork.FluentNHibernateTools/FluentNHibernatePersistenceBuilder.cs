@@ -17,6 +17,7 @@ namespace Snork.FluentNHibernateTools
             {
                 provider.DefaultSchema(defaultSchema);
             }
+
             return provider;
         }
 
@@ -192,6 +193,7 @@ namespace Snork.FluentNHibernateTools
                 default:
                     throw new ArgumentException("type");
             }
+
             return configurer;
         }
     }
