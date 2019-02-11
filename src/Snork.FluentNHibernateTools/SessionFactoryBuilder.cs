@@ -19,16 +19,16 @@ namespace Snork.FluentNHibernateTools
         private static readonly Dictionary<string, SessionFactoryInfo> SessionFactoryInfos =
             new Dictionary<string, SessionFactoryInfo>();
 
-        private static string CalculateMD5Hash(string input)
+        private static string CalculateSHA512Hash(string input)
 
         {
-            // step 1, calculate MD5 hash from input
+            // step 1, calculate Sha512 hash from input
 
-            var md5 = MD5.Create();
+            var sha512 = SHA512.Create();
 
             var inputBytes = Encoding.ASCII.GetBytes(input);
 
-            var hash = md5.ComputeHash(inputBytes);
+            var hash = sha512.ComputeHash(inputBytes);
 
             // step 2, convert byte array to hex string
 
@@ -81,7 +81,7 @@ namespace Snork.FluentNHibernateTools
             KeyInfo keyInfo,
             ProviderTypeEnum providerType, Func<ConfigurationInfo> configFunc)
         {
-            var key = CalculateMD5Hash(new JavaScriptSerializer().Serialize(keyInfo));
+            var key = CalculateSHA512Hash(new JavaScriptSerializer().Serialize(keyInfo));
 
             lock (Mutex)
             {
