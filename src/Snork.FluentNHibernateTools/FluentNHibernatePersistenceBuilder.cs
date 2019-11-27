@@ -17,7 +17,7 @@ namespace Snork.FluentNHibernateTools
             {
                 provider.DefaultSchema(defaultSchema);
             }
-
+            
             return provider;
         }
 

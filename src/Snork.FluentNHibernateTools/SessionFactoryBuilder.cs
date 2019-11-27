@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -9,6 +8,7 @@ using System.Web.Script.Serialization;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
 using NHibernate.Tool.hbm2ddl;
+using Snork.FluentNHibernateTools.Logging;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -18,6 +18,8 @@ namespace Snork.FluentNHibernateTools
 
         private static readonly Dictionary<string, SessionFactoryInfo> SessionFactoryInfos =
             new Dictionary<string, SessionFactoryInfo>();
+
+        private static readonly ILog Logger = LogProvider.GetCurrentClassLogger();
 
         private static string CalculateSHA512Hash(string input)
 
@@ -92,16 +94,23 @@ namespace Snork.FluentNHibernateTools
                 foreach (var assembly in sourceAssemblies)
                     configuration = configuration.Mappings(x => x.FluentMappings.AddFromAssembly(assembly));
                 if (options.UpdateSchema)
-                {
                     configuration.ExposeConfiguration(cfg =>
                     {
                         var schemaUpdate = new SchemaUpdate(cfg);
-                        using (var stringWriter = new StringWriter())
+                        using (LogProvider.OpenNestedContext("Schema update"))
                         {
-                            schemaUpdate.Execute(i => stringWriter.WriteLine(i), true);
+                            Logger.Debug("Starting schema update");
+                            schemaUpdate.Execute(i => Logger.Debug(i), true);
+                            Logger.Debug("Done with schema update");
                         }
+
+
+                        if (schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
+                            throw new SchemaException(
+                                string.Format("Schema update failed with {1} exceptions.  See {0} property",
+                                    nameof(SchemaException.Exceptions), schemaUpdate.Exceptions.Count),
+                                schemaUpdate.Exceptions);
                     });
-                }
 
                 configuration.BuildConfiguration();
                 SessionFactoryInfos[key] = new SessionFactoryInfo(key, configuration.BuildSessionFactory(),

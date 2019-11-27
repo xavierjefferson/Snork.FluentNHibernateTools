@@ -7,6 +7,12 @@ namespace Snork.FluentNHibernateTools
 {
     public class PersistenceConfigurationHelper
     {
+        /// <summary>
+        /// This method uses some reflection tricks to get the connection string and default schema from an instance of
+        /// IPersistenceConfigurer
+        /// </summary>
+        /// <param name="configurer"></param>
+        /// <returns></returns>
         public static DerivedInfo GetDerivedConnectionInfo(IPersistenceConfigurer configurer)
         {
             var toPropertiesMethodName =
@@ -25,13 +31,13 @@ namespace Snork.FluentNHibernateTools
                 if (methodInfo != null && methodInfo.GetParameters().Length == 0)
                 {
                     var result = new DerivedInfo();
-                    var connectionString = methodInfo.Invoke(configurer, null) as IDictionary<string, string>;
-                    if (connectionString != null)
+                    var dictionary = methodInfo.Invoke(configurer, null) as IDictionary<string, string>;
+                    if (dictionary != null)
                     {
-                        result.ConnectionString = connectionString[Tmp.ConnectionStringKey];
-                        if (connectionString.ContainsKey(Tmp.DefaultSchemaKey))
+                        result.ConnectionString = dictionary[Tmp.ConnectionStringKey];
+                        if (dictionary.ContainsKey(Tmp.DefaultSchemaKey))
                         {
-                            result.DefaultSchema = connectionString[Tmp.DefaultSchemaKey];
+                            result.DefaultSchema = dictionary[Tmp.DefaultSchemaKey];
                         }
                     }
 

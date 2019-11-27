@@ -3,7 +3,7 @@
 <package>
   <metadata>
     <id>Snork.FluentNHibernateTools</id>
-    <version>1.1.8650</version>
+    <version>1.1.8655</version>
     <authors>Xavier Jefferson</authors>
     <owners>XavierJefferson</owners>
     <licenseUrl>https://www.gnu.org/licenses/lgpl-3.0.en.html</licenseUrl>
@@ -12,7 +12,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Utilities for FluentNHibernate</description>
     <releaseNotes>
-        Replace internal md5 hash of provider options with sha-512
+        Add logging internally.  Raise exception if there's an issue during schema update.
     </releaseNotes>
     <copyright>Copyright © 2019 Xavier Jefferson</copyright>
     <tags>fluentnhibernate</tags>
