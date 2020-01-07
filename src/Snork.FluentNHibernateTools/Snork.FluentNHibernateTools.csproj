@@ -36,6 +36,9 @@
     <Reference Include="Iesi.Collections, Version=4.0.0.0, Culture=neutral, PublicKeyToken=aa95f207798dfdb4, processorArchitecture=MSIL">
       <HintPath>..\packages\Iesi.Collections.4.0.0.4000\lib\net40\Iesi.Collections.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.5.0.1\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="NHibernate, Version=4.0.0.4000, Culture=neutral, PublicKeyToken=aa95f207798dfdb4, processorArchitecture=MSIL">
       <HintPath>..\packages\NHibernate.4.0.0.4000\lib\net40\NHibernate.dll</HintPath>
     </Reference>
@@ -51,6 +54,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="App_Packages\LibLog.4.2\LibLog.cs" />
+    <Compile Include="IObjectRenamer.cs" />
+    <Compile Include="ObjectRenameManager.cs" />
+    <Compile Include="ObjectTypeEnum.cs" />
     <Compile Include="ProviderMappingHelper.cs" />
     <Compile Include="UtcDateHelper.cs" />
     <Compile Include="ConfigurationInfo.cs" />
@@ -61,6 +68,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ProviderTypeEnum.cs" />
     <Compile Include="ProviderTypeHelper.cs" />
+    <Compile Include="SchemaException.cs" />
     <Compile Include="SessionFactoryBuilder.cs" />
     <Compile Include="SessionFactoryInfo.cs" />
   </ItemGroup>

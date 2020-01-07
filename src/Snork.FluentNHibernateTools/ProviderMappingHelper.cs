@@ -72,7 +72,7 @@ namespace Snork.FluentNHibernateTools
 
             public override bool Matches(Type dialectType, Type driverType)
             {
-                return dialectType.FullName.IndexOf(DialectName) > 0;
+                return dialectType.FullName.IndexOf(DialectName, StringComparison.InvariantCulture) > 0;
             }
         }
 
