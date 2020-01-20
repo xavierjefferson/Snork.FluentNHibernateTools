@@ -5,6 +5,7 @@ using NHibernate.Hql.Ast;
 using NHibernate.Linq;
 using NHibernate.Linq.Functions;
 using NHibernate.Linq.Visitors;
+using NHibernate.Util;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -19,8 +20,8 @@ namespace Snork.FluentNHibernateTools
         public static void Register(ILinqToHqlGeneratorsRegistry registry, Expression<Func<T, TResult>> property,
             Expression<Func<T, TResult>> calculationExp)
         {
-            registry.RegisterGenerator(ReflectionHelper.GetProperty(property),
-                new CalculatedPropertyGenerator<T, TResult> {_calculationExp = calculationExp});
+            registry.RegisterGenerator(ReflectHelper.GetProperty(property),
+                new CalculatedPropertyGenerator<T, TResult> { _calculationExp = calculationExp });
         }
 
         public override HqlTreeNode BuildHql(MemberInfo member, Expression expression, HqlTreeBuilder treeBuilder,

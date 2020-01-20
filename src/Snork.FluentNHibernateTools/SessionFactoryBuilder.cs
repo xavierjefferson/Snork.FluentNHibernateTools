@@ -4,9 +4,9 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web.Script.Serialization;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
+using Newtonsoft.Json;
 using NHibernate.Tool.hbm2ddl;
 using Snork.FluentNHibernateTools.Logging;
 
@@ -37,7 +37,7 @@ namespace Snork.FluentNHibernateTools
 
             var sb = new StringBuilder();
 
-            foreach (var t in hash)
+            foreach(var t in hash)
                 sb.Append(t.ToString("X2"));
 
             return sb.ToString();
@@ -45,7 +45,7 @@ namespace Snork.FluentNHibernateTools
 
         public static SessionFactoryInfo GetByKey(string key)
         {
-            lock (Mutex)
+            lock(Mutex)
             {
                 return SessionFactoryInfos[key];
             }
@@ -54,7 +54,7 @@ namespace Snork.FluentNHibernateTools
         public static SessionFactoryInfo GetFromAssemblyOf<T>(IPersistenceConfigurer configurer,
             FluentNHibernatePersistenceBuilderOptions options = null)
         {
-            return GetFromAssemblies(new List<Assembly> {typeof(T).Assembly}, configurer, options);
+            return GetFromAssemblies(new List<Assembly> { typeof(T).Assembly }, configurer, options);
         }
 
         public static SessionFactoryInfo GetFromAssemblies(List<Assembly> sourceAssemblies,
@@ -64,7 +64,7 @@ namespace Snork.FluentNHibernateTools
             options = options ?? new FluentNHibernatePersistenceBuilderOptions();
             var providerType = ProviderTypeHelper.InferProviderType(configurer);
             var derivedInfo = PersistenceConfigurationHelper.GetDerivedConnectionInfo(configurer);
-            if (derivedInfo == null)
+            if(derivedInfo == null)
                 throw new ArgumentException("Could not derive connection string info from configurer");
             options.DefaultSchema = derivedInfo.DefaultSchema;
             Func<ConfigurationInfo> configFunc = () => new ConfigurationInfo(configurer, options, providerType);
@@ -83,16 +83,16 @@ namespace Snork.FluentNHibernateTools
             KeyInfo keyInfo,
             ProviderTypeEnum providerType, Func<ConfigurationInfo> configFunc)
         {
-            var key = CalculateSHA512Hash(new JavaScriptSerializer().Serialize(keyInfo));
+            var key = CalculateSHA512Hash(JsonConvert.SerializeObject(keyInfo));
 
-            lock (Mutex)
+            lock(Mutex)
             {
-                if (SessionFactoryInfos.ContainsKey(key))
+                if(SessionFactoryInfos.ContainsKey(key))
                     return SessionFactoryInfos[key];
                 var configurationInfo = configFunc();
                 var configurationInfoPersistenceConfigurer = configurationInfo.PersistenceConfigurer;
                 var configuration = Fluently.Configure().Database(configurationInfoPersistenceConfigurer);
-                foreach (var assembly in sourceAssemblies)
+                foreach(var assembly in sourceAssemblies)
                     configuration = configuration.Mappings(x => x.FluentMappings.AddFromAssembly(assembly));
 
                 var objectNameStore = new ObjectRenameManager();
@@ -102,16 +102,16 @@ namespace Snork.FluentNHibernateTools
                 var exposed = false;
                 configuration.ExposeConfiguration(cfg =>
                 {
-                    if (exposed) return;
+                    if(exposed) return;
                     exposed = true;
 
                     objectNameStore.RenameObjects(options, cfg);
 
 
-                    if (options.UpdateSchema)
+                    if(options.UpdateSchema)
                     {
                         var schemaUpdate = new SchemaUpdate(cfg);
-                        using (LogProvider.OpenNestedContext("Schema update"))
+                        using(LogProvider.OpenNestedContext("Schema update"))
                         {
                             Logger.Debug("Starting schema update");
                             schemaUpdate.Execute(i => Logger.Debug(i), true);
@@ -119,7 +119,7 @@ namespace Snork.FluentNHibernateTools
                         }
 
 
-                        if (schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
+                        if(schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
                             throw new SchemaException(
                                 string.Format("Schema update failed with {1} exceptions.  See {0} property",
                                     nameof(SchemaException.Exceptions), schemaUpdate.Exceptions.Count),
@@ -146,7 +146,7 @@ namespace Snork.FluentNHibernateTools
             string nameOrConnectionString,
             FluentNHibernatePersistenceBuilderOptions options = null)
         {
-            return GetFromAssemblies(new List<Assembly> {typeof(T).Assembly}, providerType, nameOrConnectionString,
+            return GetFromAssemblies(new List<Assembly> { typeof(T).Assembly }, providerType, nameOrConnectionString,
                 options);
         }
 
