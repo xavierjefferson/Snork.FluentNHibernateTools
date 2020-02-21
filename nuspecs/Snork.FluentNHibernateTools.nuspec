@@ -3,7 +3,7 @@
 <package>
   <metadata>
     <id>Snork.FluentNHibernateTools</id>
-    <version>1.1.8700</version>
+    <version>1.2.1515</version>
     <authors>Xavier Jefferson</authors>
     <owners>XavierJefferson</owners>
     <licenseUrl>https://www.gnu.org/licenses/lgpl-3.0.en.html</licenseUrl>
@@ -12,20 +12,24 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Utilities for FluentNHibernate</description>
     <releaseNotes>
-        Add logging interface internally that will dump schema updates to the configured logger.  Raise exception if there's an issue during schema update.  Add Object Renamer interface to builder options
+        Move to support netstandard2.0, net461, netcoreapp2.0
     </releaseNotes>
     <copyright>Copyright © 2020 Xavier Jefferson</copyright>
     <tags>fluentnhibernate</tags>
     <dependencies>
-		<dependency id="FluentNHibernate" version="2.0.3.0"   />
+		<dependency id="FluentNHibernate" version="2.1.2"   />
     <dependency id="Newtonsoft.Json" version="5.0.1"   />
     </dependencies>
 
 
   </metadata>
   <files>
-    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\Snork.FluentNHibernateTools.dll" target="lib\net40" />
-    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\Snork.FluentNHibernateTools.pdb" target="lib\net40" />
+    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\netstandard2.0\Snork.FluentNHibernateTools.dll" target="lib\netstandard2.0\Snork.FluentNHibernateTools.dll" />
+    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\netstandard2.0\Snork.FluentNHibernateTools.pdb" target="lib\netstandard2.0\Snork.FluentNHibernateTools.pdb" />
+    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\net461\Snork.FluentNHibernateTools.dll" target="lib\net461\Snork.FluentNHibernateTools.dll" />
+    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\net461\Snork.FluentNHibernateTools.pdb" target="lib\net461\Snork.FluentNHibernateTools.pdb" />
+    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\netcoreapp2.0\Snork.FluentNHibernateTools.dll" target="lib\netcoreapp2.0\Snork.FluentNHibernateTools.dll" />
+    <file src="..\src\Snork.FluentNHibernateTools\bin\debug\netcoreapp2.0\Snork.FluentNHibernateTools.pdb" target="lib\netcoreapp2.0\Snork.FluentNHibernateTools.pdb" />
     <file src="..\src\Snork.FluentNHibernateTools\**\*.cs;" target="src" exclude="**\obj*\**\*.cs" />
   </files>
 </package>

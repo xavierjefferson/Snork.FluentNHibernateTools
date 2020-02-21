@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using NHibernate;
-using NHibernate.Dialect;
-using NHibernate.Driver;
 
 namespace Snork.FluentNHibernateTools
 {

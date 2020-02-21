@@ -4,9 +4,9 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web.Script.Serialization;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
+using Newtonsoft.Json;
 using NHibernate.Tool.hbm2ddl;
 using Snork.FluentNHibernateTools.Logging;
 
@@ -83,7 +83,7 @@ namespace Snork.FluentNHibernateTools
             KeyInfo keyInfo,
             ProviderTypeEnum providerType, Func<ConfigurationInfo> configFunc)
         {
-            var key = CalculateSHA512Hash(new JavaScriptSerializer().Serialize(keyInfo));
+            var key = CalculateSHA512Hash(JsonConvert.SerializeObject(keyInfo));
 
             lock (Mutex)
             {
