@@ -10,7 +10,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="newtonsoft.json" Version="5.0.1" />
   </ItemGroup>
 
  

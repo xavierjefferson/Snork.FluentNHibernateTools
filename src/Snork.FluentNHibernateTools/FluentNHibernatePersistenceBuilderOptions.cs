@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+using System.Xml.Serialization;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -23,7 +23,7 @@ namespace Snork.FluentNHibernateTools
         /// <summary>
         ///     Instance of some class that can rename schema objects before creation or use.
         /// </summary>
-        [JsonIgnore]
+        [XmlIgnore]
         public virtual IObjectRenamer ObjectRenamer { get; set; }
     }
 }

@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Serialization;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
-using Newtonsoft.Json;
 using NHibernate.Tool.hbm2ddl;
 using Snork.FluentNHibernateTools.Logging;
 
@@ -83,7 +84,15 @@ namespace Snork.FluentNHibernateTools
             KeyInfo keyInfo,
             ProviderTypeEnum providerType, Func<ConfigurationInfo> configFunc)
         {
-            var key = CalculateSHA512Hash(JsonConvert.SerializeObject(keyInfo));
+            string key;
+            //serialize to XML and generate a unique key
+            //to make sure we don't already have a session factory for this config.
+            using (var stringWriter = new StringWriter())
+            {
+                var xmlSerializer = new XmlSerializer(typeof(KeyInfo));
+                xmlSerializer.Serialize(stringWriter, keyInfo);
+                key = CalculateSHA512Hash(stringWriter.ToString());
+            }
 
             lock (Mutex)
             {
@@ -167,7 +176,6 @@ namespace Snork.FluentNHibernateTools
             };
             return GetSessionFactoryInfo(sourceAssemblies, options, keyInfo, providerType, configFunc);
         }
-
 
         private class KeyInfo
         {

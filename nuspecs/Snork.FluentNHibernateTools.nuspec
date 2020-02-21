@@ -18,7 +18,6 @@
     <tags>fluentnhibernate</tags>
     <dependencies>
 		<dependency id="FluentNHibernate" version="2.1.2"   />
-    <dependency id="Newtonsoft.Json" version="5.0.1"   />
     </dependencies>
 
 
