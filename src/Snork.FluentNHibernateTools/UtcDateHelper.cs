@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.Caching;
 using NHibernate;
 
 namespace Snork.FluentNHibernateTools
@@ -9,23 +10,42 @@ namespace Snork.FluentNHibernateTools
     {
         private static readonly object DateOffsetMutex = new object();
 
-        private static readonly Dictionary<ISessionFactory, TimeSpan> Offsets =
-            new Dictionary<ISessionFactory, TimeSpan>();
+        private static readonly Dictionary<ISessionFactory, string> OffsetKeys =
+            new Dictionary<ISessionFactory, string>();
 
-       
+
+        private static readonly MemoryCache Cache = new MemoryCache(nameof(UtcDateHelper));
+
         public static DateTime GetUtcNow(this ISession session, ProviderTypeEnum providerType = ProviderTypeEnum.None)
         {
             return GetUtcNow(session.SessionFactory, providerType);
         }
-      
 
-        public static DateTime GetUtcNow(this ISessionFactory sessionFactory, ProviderTypeEnum providerType=ProviderTypeEnum.None)
+
+        public static DateTime GetUtcNow(this ISessionFactory sessionFactory,
+            ProviderTypeEnum providerType = ProviderTypeEnum.None)
         {
             lock (DateOffsetMutex)
             {
-                if (!Offsets.ContainsKey(sessionFactory))
-                    Offsets[sessionFactory] = RefreshUtcOffset(sessionFactory, providerType);
-                var utcNow = DateTime.UtcNow.Add(Offsets[sessionFactory]);
+                string key;
+                if (!OffsetKeys.ContainsKey(sessionFactory))
+                {
+                    key = Guid.NewGuid().ToString();
+                    OffsetKeys[sessionFactory] = key;
+                }
+                else
+                {
+                    key = OffsetKeys[sessionFactory];
+                }
+
+                var offset = Cache.Get(key) as TimeSpan?;
+                if (offset == null)
+                {
+                    offset = RefreshUtcOffset(sessionFactory, providerType);
+                    Cache.Add(key, offset, DateTimeOffset.Now.AddMinutes(5));
+                }
+
+                var utcNow = DateTime.UtcNow.Add(offset.Value);
                 return utcNow;
             }
         }
@@ -67,6 +87,9 @@ namespace Snork.FluentNHibernateTools
                                 return new DateTime(1970, 1, 1).AddSeconds(seconds);
                             };
                             break;
+                        case ProviderTypeEnum.Ingres:
+                            query = session.CreateSQLQuery("select date_gmt('now')");
+                            break;
                         case ProviderTypeEnum.SQLAnywhere10:
                         case ProviderTypeEnum.SQLAnywhere9:
                         case ProviderTypeEnum.SQLAnywhere11:
@@ -87,9 +110,10 @@ namespace Snork.FluentNHibernateTools
                         case ProviderTypeEnum.MsSqlCe40:
                         default:
                             throw new NotImplementedException(
-                                string.Format("This feature is not supported for provider {0}", providerType == ProviderTypeEnum.None
-                                    ? sessionWrapper.DeriveProviderType()
-                                    : providerType));
+                                string.Format("This feature is not supported for provider {0}",
+                                    providerType == ProviderTypeEnum.None
+                                        ? sessionWrapper.DeriveProviderType()
+                                        : providerType));
                     }
 
                     var stopwatch = new Stopwatch();

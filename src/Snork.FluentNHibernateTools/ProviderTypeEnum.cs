@@ -26,6 +26,8 @@
         SQLAnywhere9 = 19,
         SQLAnywhere10 = 20,
         SQLAnywhere11 = 21,
-        SQLAnywhere12 = 22
+        SQLAnywhere12 = 22,
+        Ingres = 23,
+        DB2400 = 24
     }
 }

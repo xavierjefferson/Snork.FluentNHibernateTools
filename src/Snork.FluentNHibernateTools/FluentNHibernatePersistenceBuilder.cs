@@ -1,24 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
+using System.Linq;
 using FluentNHibernate.Cfg.Db;
-using NHibernate.Driver;
+using Snork.FluentNHibernateTools.Mapping;
 
 namespace Snork.FluentNHibernateTools
 {
     public sealed class FluentNHibernatePersistenceBuilder
     {
-        private static T ConfigureProvider<T, U>(Func<PersistenceConfiguration<T, U>> createFunc,
-            string connectionString, string defaultSchema) where T : PersistenceConfiguration<T, U>
-            where U : ConnectionStringBuilder, new()
-        {
-            var provider = createFunc().ConnectionString(connectionString);
+        private static readonly Dictionary<ProviderTypeEnum, ConfigurationMappingBase> MappingsDictionary;
 
-            if (!string.IsNullOrWhiteSpace(defaultSchema))
-            {
-                provider.DefaultSchema(defaultSchema);
-            }
-            
-            return provider;
+        static FluentNHibernatePersistenceBuilder()
+        {
+            MappingsDictionary = Constants.ProviderMappings.ToDictionary(i => i.ProviderType, i => i);
         }
 
         /// <summary>
@@ -38,15 +33,10 @@ namespace Snork.FluentNHibernateTools
 
         private static string GetConnectionString(string nameOrConnectionString)
         {
-            if (IsConnectionString(nameOrConnectionString))
-            {
-                return nameOrConnectionString;
-            }
+            if (IsConnectionString(nameOrConnectionString)) return nameOrConnectionString;
 
             if (IsConnectionStringInConfiguration(nameOrConnectionString))
-            {
                 return ConfigurationManager.ConnectionStrings[nameOrConnectionString].ConnectionString;
-            }
 
             throw new ArgumentException(
                 $"Could not find connection string with name '{nameOrConnectionString}' in application config file");
@@ -65,10 +55,8 @@ namespace Snork.FluentNHibernateTools
             return connectionStringSetting != null;
         }
 
-
         /// <summary>
-        ///     Return an NHibernate persistence configurerTells the bootstrapper to use a FluentNHibernate provider as a job
-        ///     storage,
+        ///     Return an NHibernate persistence configurer
         ///     that can be accessed using the given connection string or
         ///     its name.
         /// </summary>
@@ -81,120 +69,9 @@ namespace Snork.FluentNHibernateTools
             options = options ?? new FluentNHibernatePersistenceBuilderOptions();
             var connectionString = GetConnectionString(nameOrConnectionString);
 
-            IPersistenceConfigurer configurer;
-            switch (providerType)
-            {
-                case ProviderTypeEnum.SQLAnywhere9:
-                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere9, connectionString,
-                        options.DefaultSchema);
-                    break;
-                case ProviderTypeEnum.SQLAnywhere10:
-                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere10, connectionString,
-                        options.DefaultSchema);
-                    break;
-                case ProviderTypeEnum.SQLAnywhere11:
-                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere11, connectionString,
-                        options.DefaultSchema);
-                    break;
-                case ProviderTypeEnum.SQLAnywhere12:
-                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere12, connectionString,
-                        options.DefaultSchema);
-                    break;
-                case ProviderTypeEnum.SQLite:
-                    configurer = ConfigureProvider(() => SQLiteConfiguration.Standard, connectionString,
-                        options.DefaultSchema);
-                    break;
-                case ProviderTypeEnum.JetDriver:
-                    configurer = ConfigureProvider(() => JetDriverConfiguration.Standard, connectionString,
-                        options.DefaultSchema);
-                    break;
-                case ProviderTypeEnum.MsSqlCe40:
-                    configurer = ConfigureProvider(() => MsSqlCeConfiguration.MsSqlCe40, connectionString,
-                        options.DefaultSchema);
-                    break;
-
-                case ProviderTypeEnum.OracleClient10Managed:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle10, connectionString,
-                            options.DefaultSchema)
-                        .Driver<OracleManagedDataClientDriver>();
-
-                    break;
-                case ProviderTypeEnum.OracleClient9Managed:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle9, connectionString,
-                            options.DefaultSchema)
-                        .Driver<OracleManagedDataClientDriver>();
-                    break;
-
-                case ProviderTypeEnum.OracleClient10:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle10, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.OracleClient9:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle9, connectionString,
-                        options.DefaultSchema);
-                    break;
-                case ProviderTypeEnum.PostgreSQLStandard:
-                    configurer = ConfigureProvider(() => PostgreSQLConfiguration.Standard, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.PostgreSQL81:
-                    configurer = ConfigureProvider(() => PostgreSQLConfiguration.PostgreSQL81, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.PostgreSQL82:
-                    configurer = ConfigureProvider(() => PostgreSQLConfiguration.PostgreSQL82, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.Firebird:
-                    configurer = ConfigureProvider(() => new FirebirdConfiguration(), connectionString,
-                        options.DefaultSchema);
-
-                    break;
-
-                case ProviderTypeEnum.DB2Informix1150:
-                    configurer = ConfigureProvider(() => DB2Configuration.Informix1150, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.DB2Standard:
-                    configurer = ConfigureProvider(() => DB2Configuration.Standard, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.MySQL:
-                    configurer = ConfigureProvider(() => MySQLConfiguration.Standard, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.MsSql2008:
-                    configurer = ConfigureProvider(() => MsSqlConfiguration.MsSql2008, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.MsSql2012:
-                    configurer = ConfigureProvider(() => MsSqlConfiguration.MsSql2012, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.MsSql2005:
-                    configurer = ConfigureProvider(() => MsSqlConfiguration.MsSql2005, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                case ProviderTypeEnum.MsSql2000:
-                    configurer = ConfigureProvider(() => MsSqlConfiguration.MsSql2000, connectionString,
-                        options.DefaultSchema);
-
-                    break;
-                default:
-                    throw new ArgumentException("type");
-            }
-
-            return configurer;
+            if (MappingsDictionary.ContainsKey(providerType))
+                return MappingsDictionary[providerType].Create(connectionString, options.DefaultSchema);
+            throw new ArgumentException(nameof(providerType));
         }
     }
 }

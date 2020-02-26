@@ -26,7 +26,7 @@ namespace Snork.FluentNHibernateTools
                         foreignKey.Name = newForeignKeyName;
                     }
                 }
-                
+
                 foreach (var uniqueKey in table.UniqueKeyIterator)
                 {
                     var newUniqueKeyName = options.ObjectRenamer.Rename(ObjectTypeEnum.UniqueKey, uniqueKey.Name);

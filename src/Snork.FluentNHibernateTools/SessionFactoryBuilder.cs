@@ -139,8 +139,8 @@ namespace Snork.FluentNHibernateTools
                 //configuration.BuildConfiguration();
 
 
-                SessionFactoryInfos[key] = new SessionFactoryInfo(key, configuration.BuildSessionFactory(),
-                    providerType, options);
+                SessionFactoryInfos[key] =
+                    new SessionFactoryInfo(key, configuration.BuildSessionFactory(), providerType, options);
 
                 //restore object names
                 objectNameStore.RestoreOriginalNames();
@@ -149,7 +149,6 @@ namespace Snork.FluentNHibernateTools
                 return SessionFactoryInfos[key];
             }
         }
-
 
         public static SessionFactoryInfo GetFromAssemblyOf<T>(ProviderTypeEnum providerType,
             string nameOrConnectionString,
