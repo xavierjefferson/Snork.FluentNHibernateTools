@@ -16,6 +16,7 @@ namespace Snork.FluentNHibernateTools.Tests
     {
         private static string _connectionString;
         private static ISessionFactory _sessionFactory;
+        private static SessionFactoryInfo info;
         private static FileInfo _fileInfo;
 
         [TestInitialize]
@@ -40,8 +41,11 @@ namespace Snork.FluentNHibernateTools.Tests
                 ProviderTypeEnum.SQLite,
                 _connectionString,
                 new FluentNHibernatePersistenceBuilderOptions());
-            _sessionFactory = SessionFactoryBuilder.GetFromAssemblyOf<Dummy>(persistenceConfigurer,
-                new FluentNHibernatePersistenceBuilderOptions {ObjectRenamer = new PrefixRenamer()}).SessionFactory;
+            info = SessionFactoryBuilder.GetFromAssemblyOf<Dummy>(persistenceConfigurer,
+                new FluentNHibernatePersistenceBuilderOptions {ObjectRenamer = new PrefixRenamer()});
+            _sessionFactory = info.SessionFactory;
+
+            var uu = UtcDateHelper.GetUtcNow(_sessionFactory, info.ProviderType);
         }
 
         private ISession GetSession()
