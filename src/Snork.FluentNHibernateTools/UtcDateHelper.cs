@@ -1,33 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Timers;
 using NHibernate;
-using NHibernate.Dialect;
-using NHibernate.Driver;
 
 namespace Snork.FluentNHibernateTools
 {
     public static class UtcDateHelper
     {
         private static readonly object DateOffsetMutex = new object();
-
-        private static readonly Dictionary<ISessionFactory, TimeSpan> Offsets =
+        private static readonly DateTime _lastRefresh = DateTime.Now;
+        private static Dictionary<ISessionFactory, TimeSpan> _offsets =
             new Dictionary<ISessionFactory, TimeSpan>();
 
-       
+
         public static DateTime GetUtcNow(this ISession session, ProviderTypeEnum providerType = ProviderTypeEnum.None)
         {
             return GetUtcNow(session.SessionFactory, providerType);
         }
-      
 
-        public static DateTime GetUtcNow(this ISessionFactory sessionFactory, ProviderTypeEnum providerType=ProviderTypeEnum.None)
+
+        public static DateTime GetUtcNow(this ISessionFactory sessionFactory,
+            ProviderTypeEnum providerType = ProviderTypeEnum.None)
         {
             lock (DateOffsetMutex)
             {
-                if (!Offsets.ContainsKey(sessionFactory))
-                    Offsets[sessionFactory] = RefreshUtcOffset(sessionFactory, providerType);
-                var utcNow = DateTime.UtcNow.Add(Offsets[sessionFactory]);
+                if (DateTime.Now.Subtract(_lastRefresh).TotalMinutes >= 15)
+                {
+                    _offsets = new Dictionary<ISessionFactory, TimeSpan>();
+                }
+                if (!_offsets.ContainsKey(sessionFactory))
+                    _offsets[sessionFactory] = RefreshUtcOffset(sessionFactory, providerType);
+                var utcNow = DateTime.UtcNow.Add(_offsets[sessionFactory]);
                 return utcNow;
             }
         }
@@ -89,9 +93,10 @@ namespace Snork.FluentNHibernateTools
                         case ProviderTypeEnum.MsSqlCe40:
                         default:
                             throw new NotImplementedException(
-                                string.Format("This feature is not supported for provider {0}", providerType == ProviderTypeEnum.None
-                                    ? sessionWrapper.DeriveProviderType()
-                                    : providerType));
+                                string.Format("This feature is not supported for provider {0}",
+                                    providerType == ProviderTypeEnum.None
+                                        ? sessionWrapper.DeriveProviderType()
+                                        : providerType));
                     }
 
                     var stopwatch = new Stopwatch();
