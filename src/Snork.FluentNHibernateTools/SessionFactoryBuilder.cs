@@ -88,47 +88,41 @@ namespace Snork.FluentNHibernateTools
                 foreach (var assembly in sourceAssemblies)
                     configuration = configuration.Mappings(x => x.FluentMappings.AddFromAssembly(assembly));
 
-                var objectNameStore = new ObjectRenameManager();
-
-
-                //make sure we only execute ExposeConfiguration once.  It will try to execute again when we build the session factory
-                var exposed = false;
-                configuration.ExposeConfiguration(cfg =>
+                using (var objectNameStore = new ObjectRenameManager())
                 {
-                    if (exposed) return;
-                    exposed = true;
-
-                    objectNameStore.RenameObjects(options, cfg);
-
-
-                    if (options.UpdateSchema)
+                    //make sure we only execute ExposeConfiguration once.  It will try to execute again when we build the session factory
+                    var exposed = false;
+                    configuration.ExposeConfiguration(cfg =>
                     {
-                        var schemaUpdate = new SchemaUpdate(cfg);
-                        using (LogProvider.OpenNestedContext("Schema update"))
+                        if (exposed) return;
+                        exposed = true;
+
+                        objectNameStore.RenameObjects(options, cfg);
+
+
+                        if (options.UpdateSchema)
                         {
-                            Logger.Debug("Starting schema update");
-                            schemaUpdate.Execute(i => Logger.Debug(i), true);
-                            Logger.Debug("Done with schema update");
+                            var schemaUpdate = new SchemaUpdate(cfg);
+                            using (LogProvider.OpenNestedContext("Schema update"))
+                            {
+                                Logger.Debug("Starting schema update");
+                                schemaUpdate.Execute(i => Logger.Debug(i), true);
+                                Logger.Debug("Done with schema update");
+                            }
+
+
+                            if (schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
+                                throw new SchemaException(
+                                    string.Format("Schema update failed with {1} exceptions.  See {0} property",
+                                        nameof(SchemaException.Exceptions), schemaUpdate.Exceptions.Count),
+                                    schemaUpdate.Exceptions);
                         }
+                    });
 
+                    SessionFactoryInfos[key] = new SessionFactoryInfo(key, configuration.BuildSessionFactory(),
+                        providerType, options);
 
-                        if (schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
-                            throw new SchemaException(
-                                string.Format("Schema update failed with {1} exceptions.  See {0} property",
-                                    nameof(SchemaException.Exceptions), schemaUpdate.Exceptions.Count),
-                                schemaUpdate.Exceptions);
-                    }
-                });
-
-                //configuration.BuildConfiguration();
-
-
-                SessionFactoryInfos[key] = new SessionFactoryInfo(key, configuration.BuildSessionFactory(),
-                    providerType, options);
-
-                //restore object names
-                objectNameStore.RestoreOriginalNames();
-
+                }
 
                 return SessionFactoryInfos[key];
             }

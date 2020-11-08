@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{
 		..\nuspecs\Snork.FluentNHibernateTools.nuspec = ..\nuspecs\Snork.FluentNHibernateTools.nuspec
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snork.FluentNHibernateTools.Tests", "Snork.FluentNHibernateTools.Tests\Snork.FluentNHibernateTools.Tests.csproj", "{89A5BD46-FD9E-4EFB-B574-EEB50F92A099}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89A5BD46-FD9E-4EFB-B574-EEB50F92A099}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89A5BD46-FD9E-4EFB-B574-EEB50F92A099}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89A5BD46-FD9E-4EFB-B574-EEB50F92A099}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89A5BD46-FD9E-4EFB-B574-EEB50F92A099}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
