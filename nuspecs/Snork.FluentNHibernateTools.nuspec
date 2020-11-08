@@ -14,7 +14,7 @@
     <releaseNotes>
         Upgrade to Fluentnhibernate 3.0.1
     </releaseNotes>
-    <copyright>Copyright © 2020 Xavier Jefferson</copyright>
+    <copyright>Copyright © 2017-2020 Xavier Jefferson</copyright>
     <tags>fluentnhibernate</tags>
     <dependencies>
 		<dependency id="FluentNHibernate" version="3.0.1"   />

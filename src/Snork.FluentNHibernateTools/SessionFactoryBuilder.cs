@@ -23,24 +23,17 @@ namespace Snork.FluentNHibernateTools
 
 
         private static string CalculateSHA512Hash(string input)
-
         {
             // step 1, calculate Sha512 hash from input
-
-            var sha512 = SHA512.Create();
-
-            var inputBytes = Encoding.ASCII.GetBytes(input);
-
-            var hash = sha512.ComputeHash(inputBytes);
-
-            // step 2, convert byte array to hex string
-
-            var sb = new StringBuilder();
-
-            foreach (var t in hash)
-                sb.Append(t.ToString("X2"));
-
-            return sb.ToString();
+            using (var sha512 = SHA512.Create())
+            {   var inputBytes = Encoding.ASCII.GetBytes(input);
+                var hash = sha512.ComputeHash(inputBytes);
+                // step 2, convert byte array to hex string
+                var sb = new StringBuilder();
+                foreach (var t in hash)
+                    sb.Append(t.ToString("X2"));
+                return sb.ToString();
+            }
         }
 
         public static SessionFactoryInfo GetByKey(string key)
