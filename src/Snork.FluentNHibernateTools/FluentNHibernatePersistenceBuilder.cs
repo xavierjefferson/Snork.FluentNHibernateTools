@@ -100,6 +100,10 @@ namespace Snork.FluentNHibernateTools
                     configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere12, connectionString,
                         options.DefaultSchema);
                     break;
+                case ProviderTypeEnum.SQLAnywhere17:
+                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere17, connectionString,
+                        options.DefaultSchema);
+                    break;
                 case ProviderTypeEnum.SQLite:
                     configurer = ConfigureProvider(() => SQLiteConfiguration.Standard, connectionString,
                         options.DefaultSchema);
