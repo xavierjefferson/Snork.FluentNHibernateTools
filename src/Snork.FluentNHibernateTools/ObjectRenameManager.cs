@@ -29,10 +29,11 @@ namespace Snork.FluentNHibernateTools
                 {
                     _recoveryActions.Enqueue(() =>
                     {
-                        Logger.Debug("Renaming {0} '{1}' back to '{2}'", newName, originalName);
+                        Logger.Debug("Renaming {0} '{1}' back to '{2}'", typeof(T).Name.ToLower(), newName,
+                            originalName);
                         nameSetter(item, originalName);
                     });
-                    Logger.Debug("Temporarily renamed index {0} to {1}", originalName, newName);
+                    Logger.Debug("Temporarily renamed {2} {0} to {1}", originalName, newName, typeof(T).Name.ToLower());
                     nameSetter(item, newName);
                 }
             }

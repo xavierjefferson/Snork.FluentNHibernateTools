@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Timers;
 using NHibernate;
 
 namespace Snork.FluentNHibernateTools
 {
     public static class UtcDateHelper
     {
+        public const int DefaultSyncRefreshIntervalMinutes = 5;
+
         private static readonly object DateOffsetMutex = new object();
-        private static readonly DateTime _lastRefresh = DateTime.Now;
+        private static readonly DateTime LastRefresh = DateTime.Now;
+
         private static Dictionary<ISessionFactory, TimeSpan> _offsets =
             new Dictionary<ISessionFactory, TimeSpan>();
 
@@ -25,10 +27,15 @@ namespace Snork.FluentNHibernateTools
         {
             lock (DateOffsetMutex)
             {
-                if (DateTime.Now.Subtract(_lastRefresh).TotalMinutes >= 15)
+                switch (providerType)
                 {
-                    _offsets = new Dictionary<ISessionFactory, TimeSpan>();
+                    case ProviderTypeEnum.SQLite:
+                    case ProviderTypeEnum.JetDriver:
+                        return DateTime.UtcNow;
                 }
+
+                if (DateTime.Now.Subtract(LastRefresh).TotalMinutes >= DefaultSyncRefreshIntervalMinutes)
+                    _offsets = new Dictionary<ISessionFactory, TimeSpan>();
                 if (!_offsets.ContainsKey(sessionFactory))
                     _offsets[sessionFactory] = RefreshUtcOffset(sessionFactory, providerType);
                 var utcNow = DateTime.UtcNow.Add(_offsets[sessionFactory]);
@@ -43,7 +50,7 @@ namespace Snork.FluentNHibernateTools
                 Func<object, DateTime> conversionFunc = a => (DateTime) a;
                 using (var session = sessionWrapper.OpenStatelessSession())
                 {
-                    IQuery query;
+                    IQuery query = null;
                     switch (providerType == ProviderTypeEnum.None
                         ? sessionWrapper.DeriveProviderType()
                         : providerType)
@@ -62,8 +69,9 @@ namespace Snork.FluentNHibernateTools
                         case ProviderTypeEnum.MySQL:
                             query = session.CreateSQLQuery("select utc_timestamp()");
                             break;
+                        case ProviderTypeEnum.JetDriver:
                         case ProviderTypeEnum.SQLite:
-                            query = session.CreateSQLQuery("select datetime('now')");
+                            query = null;
                             break;
                         case ProviderTypeEnum.DB2Informix1150:
                             query = session.CreateSQLQuery("select dbinfo('utc_current')");
@@ -83,7 +91,6 @@ namespace Snork.FluentNHibernateTools
                         case ProviderTypeEnum.MsSql2005:
                         case ProviderTypeEnum.MsSql2008:
                         case ProviderTypeEnum.MsSql2012:
-                        case ProviderTypeEnum.JetDriver:
                             query = session.CreateSQLQuery("select getutcdate()");
                             break;
                         case ProviderTypeEnum.DB2Standard:
@@ -99,12 +106,17 @@ namespace Snork.FluentNHibernateTools
                                         : providerType));
                     }
 
-                    var stopwatch = new Stopwatch();
-                    var current = DateTime.UtcNow;
-                    stopwatch.Start();
-                    var serverUtc = conversionFunc(query.UniqueResult());
-                    stopwatch.Stop();
-                    return serverUtc.Subtract(current).Subtract(stopwatch.Elapsed);
+                    if (query != null)
+                    {
+                        var stopwatch = new Stopwatch();
+                        var current = DateTime.UtcNow;
+                        stopwatch.Start();
+                        var serverUtc = conversionFunc(query.UniqueResult());
+                        stopwatch.Stop();
+                        return serverUtc.Subtract(current).Subtract(stopwatch.Elapsed);
+                    }
+
+                    return TimeSpan.Zero;
                 }
             }
         }
