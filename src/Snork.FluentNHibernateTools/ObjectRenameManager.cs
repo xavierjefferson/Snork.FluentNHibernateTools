@@ -8,6 +8,7 @@ namespace Snork.FluentNHibernateTools
     internal class ObjectRenameManager
     {
         private readonly RestorableList<ForeignKey> _foreignKeys = new RestorableList<ForeignKey>();
+        private readonly RestorableList<Index> _indexes = new RestorableList<Index>();
         private readonly RestorableList<Table> _tables = new RestorableList<Table>();
         private readonly RestorableList<UniqueKey> _uniqueKeys = new RestorableList<UniqueKey>();
 
@@ -17,6 +18,16 @@ namespace Snork.FluentNHibernateTools
 
             foreach (var table in cfg.ClassMappings.Select(i => i.Table))
             {
+                foreach (var index in table.IndexIterator)
+                {
+                    var newIndexName = options.ObjectRenamer.Rename(ObjectTypeEnum.Index, index.Name);
+                    if (!string.IsNullOrWhiteSpace(newIndexName) && newIndexName != index.Name)
+                    {
+                        _indexes.Add(new IndexNameRestorer(index, index.Name));
+                        index.Name = newIndexName;
+                    }
+                }
+
                 foreach (var foreignKey in table.ForeignKeyIterator)
                 {
                     var newForeignKeyName = options.ObjectRenamer.Rename(ObjectTypeEnum.ForeignKey, foreignKey.Name);
@@ -26,7 +37,7 @@ namespace Snork.FluentNHibernateTools
                         foreignKey.Name = newForeignKeyName;
                     }
                 }
-                
+
                 foreach (var uniqueKey in table.UniqueKeyIterator)
                 {
                     var newUniqueKeyName = options.ObjectRenamer.Rename(ObjectTypeEnum.UniqueKey, uniqueKey.Name);
@@ -54,11 +65,24 @@ namespace Snork.FluentNHibernateTools
             _tables.RestoreOriginalName();
             _foreignKeys.RestoreOriginalName();
             _uniqueKeys.RestoreOriginalName();
+            _indexes.RestoreOriginalName();
         }
 
         private class ForeignKeyNameRestorer : NameRestorer<ForeignKey>
         {
             public ForeignKeyNameRestorer(ForeignKey foreignKey, string originalName) : base(foreignKey, originalName)
+            {
+            }
+
+            public override void Restore()
+            {
+                Item.Name = OriginalName;
+            }
+        }
+
+        private class IndexNameRestorer : NameRestorer<Index>
+        {
+            public IndexNameRestorer(Index index, string originalName) : base(index, originalName)
             {
             }
 
