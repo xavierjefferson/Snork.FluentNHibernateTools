@@ -4,9 +4,10 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
-using System.Web.Script.Serialization;
+using System.Text.RegularExpressions;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
+using Newtonsoft.Json;
 using NHibernate.Tool.hbm2ddl;
 using Snork.FluentNHibernateTools.Logging;
 
@@ -83,7 +84,7 @@ namespace Snork.FluentNHibernateTools
             KeyInfo keyInfo,
             ProviderTypeEnum providerType, Func<ConfigurationInfo> configFunc)
         {
-            var key = CalculateSHA512Hash(new JavaScriptSerializer().Serialize(keyInfo));
+            var key = CalculateSHA512Hash(JsonConvert.SerializeObject(keyInfo));
 
             lock (Mutex)
             {
@@ -111,19 +112,36 @@ namespace Snork.FluentNHibernateTools
                     if (options.UpdateSchema)
                     {
                         var schemaUpdate = new SchemaUpdate(cfg);
+                        string sql;
                         using (LogProvider.OpenNestedContext("Schema update"))
                         {
                             Logger.Debug("Starting schema update");
-                            schemaUpdate.Execute(i => Logger.Debug(i), true);
+
+                            schemaUpdate.Execute(i =>
+                            {
+                                Logger.Debug(i);
+                                sql = i;
+                            }, true);
                             Logger.Debug("Done with schema update");
                         }
 
-
                         if (schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
-                            throw new SchemaException(
-                                string.Format("Schema update failed with {1} exceptions.  See {0} property",
-                                    nameof(SchemaException.Exceptions), schemaUpdate.Exceptions.Count),
-                                schemaUpdate.Exceptions);
+                        {
+                            var exceptions = schemaUpdate.Exceptions.ToList();
+                            if (providerType == ProviderTypeEnum.SQLite)
+                            {
+                                //ignore sqlite existing index messages
+                                var regex = new Regex("index [a-z0-9][a-z0-9_]* already exists",
+                                    RegexOptions.IgnoreCase);
+                                exceptions.RemoveAll(i => regex.IsMatch(i.Message));
+                            }
+
+                            if (exceptions.Any())
+                                throw new SchemaException(
+                                    string.Format("Schema update failed with {1} exceptions.  See {0} property",
+                                        nameof(SchemaException.Exceptions), exceptions.Count),
+                                    exceptions);
+                        }
                     }
                 });
 

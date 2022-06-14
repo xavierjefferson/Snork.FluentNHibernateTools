@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using NHibernate;
-using NHibernate.Dialect;
-using NHibernate.Driver;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -14,85 +13,139 @@ namespace Snork.FluentNHibernateTools
         private static readonly Dictionary<ISessionFactory, TimeSpan> Offsets =
             new Dictionary<ISessionFactory, TimeSpan>();
 
-       
+
         public static DateTime GetUtcNow(this ISession session, ProviderTypeEnum providerType = ProviderTypeEnum.None)
         {
             return GetUtcNow(session.SessionFactory, providerType);
         }
-      
 
-        public static DateTime GetUtcNow(this ISessionFactory sessionFactory, ProviderTypeEnum providerType=ProviderTypeEnum.None)
+        public static TimeSpan GetUtcOffset(this ISession session,
+            ProviderTypeEnum providerType = ProviderTypeEnum.None)
+        {
+            return GetUtcOffset(session.SessionFactory, providerType);
+        }
+
+        public static TimeSpan GetUtcOffset(this ISessionFactory sessionFactory,
+            ProviderTypeEnum providerType = ProviderTypeEnum.None)
         {
             lock (DateOffsetMutex)
             {
                 if (!Offsets.ContainsKey(sessionFactory))
                     Offsets[sessionFactory] = RefreshUtcOffset(sessionFactory, providerType);
-                var utcNow = DateTime.UtcNow.Add(Offsets[sessionFactory]);
-                return utcNow;
+                return Offsets[sessionFactory];
             }
         }
 
-        private static TimeSpan RefreshUtcOffset(ISessionFactory sessionWrapper, ProviderTypeEnum providerType)
+        public static DateTime GetUtcNow(this ISessionFactory sessionFactory,
+            ProviderTypeEnum providerType = ProviderTypeEnum.None)
+        {
+            return DateTime.UtcNow.Add(GetUtcOffset(sessionFactory, providerType));
+        }
+
+        private static bool IsLocalIpAddress(string host)
+        {
+            try
+            {
+                // get host IP addresses
+                var hostAddresses = Dns.GetHostAddresses(host);
+                // get local IP addresses
+                var localIPs = Dns.GetHostAddresses(Dns.GetHostName());
+
+                // test if any host IP equals to any local IP or to localhost
+                foreach (var address in hostAddresses)
+                {
+                    // is localhost
+                    if (IPAddress.IsLoopback(address)) return true;
+                    // is local address
+                    foreach (var localIP in localIPs)
+                        if (address.Equals(localIP))
+                            return true;
+                }
+            }
+            catch
+            {
+            }
+
+            return false;
+        }
+
+        private static TimeSpan RefreshUtcOffset(ISessionFactory sessionFactory, ProviderTypeEnum providerType)
         {
             lock (DateOffsetMutex)
             {
-                Func<object, DateTime> conversionFunc = a => (DateTime) a;
-                using (var session = sessionWrapper.OpenStatelessSession())
+                //desktop databases don't have an offset
+                switch (providerType)
                 {
-                    IQuery query;
-                    switch (providerType == ProviderTypeEnum.None
-                        ? sessionWrapper.DeriveProviderType()
-                        : providerType)
-                    {
-                        case ProviderTypeEnum.OracleClient10Managed:
-                        case ProviderTypeEnum.OracleClient9Managed:
-                        case ProviderTypeEnum.OracleClient10:
-                        case ProviderTypeEnum.OracleClient9:
-                            query = session.CreateSQLQuery("select systimestamp at time zone 'UTC' from dual");
-                            break;
-                        case ProviderTypeEnum.PostgreSQLStandard:
-                        case ProviderTypeEnum.PostgreSQL81:
-                        case ProviderTypeEnum.PostgreSQL82:
-                            query = session.CreateSQLQuery("SELECT NOW() at time zone 'utc'");
-                            break;
-                        case ProviderTypeEnum.MySQL:
-                            query = session.CreateSQLQuery("select utc_timestamp()");
-                            break;
-                        case ProviderTypeEnum.SQLite:
-                            query = session.CreateSQLQuery("select datetime('now')");
-                            break;
-                        case ProviderTypeEnum.DB2Informix1150:
-                            query = session.CreateSQLQuery("select dbinfo('utc_current')");
-                            conversionFunc = o =>
-                            {
-                                var seconds = Convert.ToInt32(o);
-                                return new DateTime(1970, 1, 1).AddSeconds(seconds);
-                            };
-                            break;
-                        case ProviderTypeEnum.SQLAnywhere10:
-                        case ProviderTypeEnum.SQLAnywhere9:
-                        case ProviderTypeEnum.SQLAnywhere11:
-                        case ProviderTypeEnum.SQLAnywhere12:
-                            query = session.CreateSQLQuery("select CURRENT UTC TIMESTAMP");
-                            break;
-                        case ProviderTypeEnum.MsSql2000:
-                        case ProviderTypeEnum.MsSql2005:
-                        case ProviderTypeEnum.MsSql2008:
-                        case ProviderTypeEnum.MsSql2012:
-                        case ProviderTypeEnum.JetDriver:
-                            query = session.CreateSQLQuery("select getutcdate()");
-                            break;
-                        case ProviderTypeEnum.DB2Standard:
-                            query = session.CreateSQLQuery("select CURRENT TIMESTAMP - CURRENT TIME ZONE");
-                            break;
-                        case ProviderTypeEnum.Firebird:
-                        case ProviderTypeEnum.MsSqlCe40:
-                        default:
-                            throw new NotImplementedException(
-                                string.Format("This feature is not supported for provider {0}", providerType == ProviderTypeEnum.None
-                                    ? sessionWrapper.DeriveProviderType()
-                                    : providerType));
-                    }
+                    case ProviderTypeEnum.JetDriver:
+                    case ProviderTypeEnum.MsSqlCe40:
+                    case ProviderTypeEnum.SQLite:
+                        var tmp = DateTime.UtcNow;
+                        return tmp.Subtract(tmp.ToLocalTime());
+                }
+
+                Func<object, DateTime> conversionFunc = a => (DateTime) a;
+                using (var session = sessionFactory.OpenStatelessSession())
+                {
+                    if (IsLocalIpAddress(session.Connection.DataSource)) return TimeSpan.Zero;
+
+                    IQuery query = null;
+
+
+                    if (query == null)
+                        //fallback
+                        switch (providerType == ProviderTypeEnum.None
+                            ? sessionFactory.DeriveProviderType()
+                            : providerType)
+                        {
+                            case ProviderTypeEnum.Firebird:
+                                query = session.CreateSQLQuery("select CURRENT_TIMESTAMP from rdb$database");
+                                break;
+                            case ProviderTypeEnum.OracleClient10Managed:
+                            case ProviderTypeEnum.OracleClient9Managed:
+                            case ProviderTypeEnum.OracleClient10:
+                            case ProviderTypeEnum.OracleClient9:
+                                query = session.CreateSQLQuery("select systimestamp at time zone 'UTC' from dual");
+                                break;
+                            case ProviderTypeEnum.PostgreSQLStandard:
+                            case ProviderTypeEnum.PostgreSQL81:
+                            case ProviderTypeEnum.PostgreSQL82:
+                                query = session.CreateSQLQuery("SELECT NOW() at time zone 'utc'");
+                                break;
+                            case ProviderTypeEnum.MySQL:
+                                query = session.CreateSQLQuery("select utc_timestamp()");
+                                break;
+                            case ProviderTypeEnum.DB2Informix1150:
+                                query = session.CreateSQLQuery("select dbinfo('utc_current')");
+                                conversionFunc = o =>
+                                {
+                                    var seconds = Convert.ToInt32(o);
+                                    return new DateTime(1970, 1, 1).AddSeconds(seconds);
+                                };
+                                break;
+                            case ProviderTypeEnum.SQLAnywhere10:
+                            case ProviderTypeEnum.SQLAnywhere9:
+                            case ProviderTypeEnum.SQLAnywhere11:
+                            case ProviderTypeEnum.SQLAnywhere12:
+                                query = session.CreateSQLQuery("select CURRENT UTC TIMESTAMP");
+                                break;
+                            case ProviderTypeEnum.MsSql2000:
+                            case ProviderTypeEnum.MsSql2005:
+                            case ProviderTypeEnum.MsSql2008:
+                            case ProviderTypeEnum.MsSql2012:
+                                if (session.Connection.DataSource.StartsWith(".")) return TimeSpan.Zero;
+                                query = session.CreateSQLQuery("select getutcdate()");
+                                break;
+                            case ProviderTypeEnum.DB2Standard:
+                                query = session.CreateSQLQuery("select CURRENT TIMESTAMP - CURRENT TIME ZONE");
+                                break;
+
+                            default:
+                                throw new NotImplementedException(
+                                    string.Format("This feature is not supported for provider {0}",
+                                        providerType == ProviderTypeEnum.None
+                                            ? sessionFactory.DeriveProviderType()
+                                            : providerType));
+                        }
 
                     var stopwatch = new Stopwatch();
                     var current = DateTime.UtcNow;

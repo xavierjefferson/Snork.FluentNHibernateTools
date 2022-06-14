@@ -55,7 +55,7 @@ namespace Snork.FluentNHibernateTools
 
         private static bool IsConnectionString(string nameOrConnectionString)
         {
-            return nameOrConnectionString.Contains(";");
+            return nameOrConnectionString.Contains(";")  || nameOrConnectionString.Contains("=");
         }
 
         private static bool IsConnectionStringInConfiguration(string connectionStringName)
