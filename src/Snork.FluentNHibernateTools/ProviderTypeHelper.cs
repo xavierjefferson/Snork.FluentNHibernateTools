@@ -1,4 +1,7 @@
-﻿using FluentNHibernate.Cfg.Db;
+﻿using System;
+using System.Collections.Generic;
+using FluentNHibernate.Cfg.Db;
+using NHibernate.Dialect;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -6,52 +9,16 @@ namespace Snork.FluentNHibernateTools
     {
         public static ProviderTypeEnum InferProviderType(IPersistenceConfigurer config)
         {
-            if (config is SQLAnywhereConfiguration)
+            if (config == null)
             {
-                return ProviderTypeEnum.SQLAnywhere9;
+                throw new ArgumentNullException(nameof(config));
             }
+            var info = PersistenceConfigurationHelper.GetDerivedConnectionInfo(config);
+            var providerType = ProviderMappingHelper.DeriveProviderType(info.Dialect, info.Driver);
+            if (providerType != ProviderTypeEnum.None) return providerType;
 
-            if (config is MsSqlConfiguration)
-            {
-                return ProviderTypeEnum.MsSql2000;
-            }
-
-            if (config is PostgreSQLConfiguration)
-            {
-                return ProviderTypeEnum.PostgreSQLStandard;
-            }
-
-            if (config is JetDriverConfiguration)
-            {
-                return ProviderTypeEnum.JetDriver;
-            }
-
-            if (config is SQLiteConfiguration)
-            {
-                return ProviderTypeEnum.SQLite;
-            }
-
-            if (config is MsSqlCeConfiguration)
-            {
-                return ProviderTypeEnum.MsSqlCe40;
-            }
-
-            if (config is DB2Configuration)
-            {
-                return ProviderTypeEnum.DB2Standard;
-            }
-
-            if (config is OracleClientConfiguration)
-            {
-                return ProviderTypeEnum.OracleClient9;
-            }
-
-            if (config is FirebirdConfiguration)
-            {
-                return ProviderTypeEnum.Firebird;
-            }
-
-            return ProviderTypeEnum.None;
+            throw new ArgumentOutOfRangeException($"Unknown configurer {config.GetType().FullName}");
+            
         }
     }
 }

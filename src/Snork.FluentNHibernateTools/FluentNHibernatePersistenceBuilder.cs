@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using FluentNHibernate.Cfg.Db;
-using NHibernate.Driver;
+using Microsoft.Extensions.Configuration;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -13,11 +13,7 @@ namespace Snork.FluentNHibernateTools
         {
             var provider = createFunc().ConnectionString(connectionString);
 
-            if (!string.IsNullOrWhiteSpace(defaultSchema))
-            {
-                provider.DefaultSchema(defaultSchema);
-            }
-            
+            if (!string.IsNullOrWhiteSpace(defaultSchema)) provider.DefaultSchema(defaultSchema);
             return provider;
         }
 
@@ -28,41 +24,40 @@ namespace Snork.FluentNHibernateTools
         /// <param name="nameOrConnectionString">Connection string or its name</param>
         /// <param name="providerType">Provider type from enumeration</param>
         /// <param name="options"></param>
+        /// <param name="configuration">
+        ///     An IConfiguration instance to read from.  Otherwise connection string will be read with
+        ///     System.Configuration.ConfigurationManager
+        /// </param>
         public static ConfigurationInfo Build(ProviderTypeEnum providerType, string nameOrConnectionString,
-            FluentNHibernatePersistenceBuilderOptions options = null)
+            FluentNHibernatePersistenceBuilderOptions options = null, IConfiguration configuration = null)
         {
             options = options ?? new FluentNHibernatePersistenceBuilderOptions();
-            var configurer = GetPersistenceConfigurer(providerType, nameOrConnectionString, options);
+            var configurer = GetPersistenceConfigurer(providerType, nameOrConnectionString, options, configuration);
             return new ConfigurationInfo(configurer, options, providerType);
         }
 
-        private static string GetConnectionString(string nameOrConnectionString)
-        {
-            if (IsConnectionString(nameOrConnectionString))
-            {
-                return nameOrConnectionString;
-            }
 
-            if (IsConnectionStringInConfiguration(nameOrConnectionString))
-            {
-                return ConfigurationManager.ConnectionStrings[nameOrConnectionString].ConnectionString;
-            }
+        private static string GetConnectionString(string nameOrConnectionString,
+            ConnectionStringImpl connectionStringImpl)
+        {
+            if (IsConnectionString(nameOrConnectionString)) return nameOrConnectionString;
+
+            if (IsConnectionStringInConfiguration(nameOrConnectionString, connectionStringImpl))
+                return connectionStringImpl.GetConnectionString(nameOrConnectionString);
 
             throw new ArgumentException(
-                $"Could not find connection string with name '{nameOrConnectionString}' in application config file");
+                $"Could not find connection string with name '{nameOrConnectionString}' in application config");
         }
 
 
         private static bool IsConnectionString(string nameOrConnectionString)
         {
-            return nameOrConnectionString.Contains(";")  || nameOrConnectionString.Contains("=");
+            return nameOrConnectionString.Contains(";") || nameOrConnectionString.Contains("=");
         }
 
-        private static bool IsConnectionStringInConfiguration(string connectionStringName)
+        private static bool IsConnectionStringInConfiguration(string connectionStringName, ConnectionStringImpl impl)
         {
-            var connectionStringSetting = ConfigurationManager.ConnectionStrings[connectionStringName];
-
-            return connectionStringSetting != null;
+            return impl.ConnectionStringExists(connectionStringName);
         }
 
 
@@ -72,16 +67,24 @@ namespace Snork.FluentNHibernateTools
         ///     that can be accessed using the given connection string or
         ///     its name.
         /// </summary>
-        /// <param name="nameOrConnectionString">Connection string or its name</param>
         /// <param name="providerType">Provider type from enumeration</param>
+        /// <param name="nameOrConnectionString">Connection string or its name</param>
         /// <param name="options"></param>
+        /// <param name="configuration">An IConfiguration instance from which the connection string should be read</param>
         public static IPersistenceConfigurer GetPersistenceConfigurer(ProviderTypeEnum providerType,
-            string nameOrConnectionString, FluentNHibernatePersistenceBuilderOptions options = null)
+            string nameOrConnectionString, FluentNHibernatePersistenceBuilderOptions options = null,
+            IConfiguration configuration = null)
         {
+            var connectionStringImpl = configuration == null
+                ? new SEConfigurationImpl()
+                : (ConnectionStringImpl) new MEConfigurationImpl(configuration);
+            var connectionString = GetConnectionString(nameOrConnectionString, connectionStringImpl);
+
             options = options ?? new FluentNHibernatePersistenceBuilderOptions();
-            var connectionString = GetConnectionString(nameOrConnectionString);
+
 
             IPersistenceConfigurer configurer;
+
             switch (providerType)
             {
                 case ProviderTypeEnum.SQLAnywhere9:
@@ -100,6 +103,10 @@ namespace Snork.FluentNHibernateTools
                     configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere12, connectionString,
                         options.DefaultSchema);
                     break;
+                case ProviderTypeEnum.SQLAnywhere17:
+                    configurer = ConfigureProvider(() => SQLAnywhereConfiguration.SQLAnywhere17, connectionString,
+                        options.DefaultSchema);
+                    break;
                 case ProviderTypeEnum.SQLite:
                     configurer = ConfigureProvider(() => SQLiteConfiguration.Standard, connectionString,
                         options.DefaultSchema);
@@ -108,30 +115,30 @@ namespace Snork.FluentNHibernateTools
                     configurer = ConfigureProvider(() => JetDriverConfiguration.Standard, connectionString,
                         options.DefaultSchema);
                     break;
+                case ProviderTypeEnum.MsSqlCeStandard:
+                    configurer = ConfigureProvider(() => MsSqlCeConfiguration.Standard, connectionString,
+                        options.DefaultSchema);
+                    break;
                 case ProviderTypeEnum.MsSqlCe40:
                     configurer = ConfigureProvider(() => MsSqlCeConfiguration.MsSqlCe40, connectionString,
                         options.DefaultSchema);
                     break;
-
                 case ProviderTypeEnum.OracleClient10Managed:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle10, connectionString,
-                            options.DefaultSchema)
-                        .Driver<OracleManagedDataClientDriver>();
-
+                    configurer = ConfigureProvider(() => OracleManagedDataClientConfiguration.Oracle10,
+                        connectionString,
+                        options.DefaultSchema);
                     break;
                 case ProviderTypeEnum.OracleClient9Managed:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle9, connectionString,
-                            options.DefaultSchema)
-                        .Driver<OracleManagedDataClientDriver>();
+                    configurer = ConfigureProvider(() => OracleManagedDataClientConfiguration.Oracle9, connectionString,
+                        options.DefaultSchema);
                     break;
 
                 case ProviderTypeEnum.OracleClient10:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle10, connectionString,
+                    configurer = ConfigureProvider(() => OracleDataClientConfiguration.Oracle10, connectionString,
                         options.DefaultSchema);
-
                     break;
                 case ProviderTypeEnum.OracleClient9:
-                    configurer = ConfigureProvider(() => OracleClientConfiguration.Oracle9, connectionString,
+                    configurer = ConfigureProvider(() => OracleDataClientConfiguration.Oracle9, connectionString,
                         options.DefaultSchema);
                     break;
                 case ProviderTypeEnum.PostgreSQLStandard:
@@ -191,10 +198,59 @@ namespace Snork.FluentNHibernateTools
 
                     break;
                 default:
-                    throw new ArgumentException("type");
+                    throw new ArgumentException(nameof(providerType));
             }
 
             return configurer;
+        }
+
+        /// <summary>
+        ///     Uses IConfiguration
+        /// </summary>
+        public class MEConfigurationImpl : ConnectionStringImpl
+        {
+            private readonly IConfiguration _config;
+
+            public MEConfigurationImpl(IConfiguration config)
+            {
+                _config = config;
+            }
+
+            public override bool ConnectionStringExists(string name)
+            {
+                return _config.GetConnectionString(name) != null;
+            }
+
+            public override string GetConnectionString(string name)
+            {
+                return _config.GetConnectionString(name);
+            }
+        }
+
+        /// <summary>
+        ///     Uses System.ConfigurationManager
+        /// </summary>
+        public class SEConfigurationImpl : ConnectionStringImpl
+        {
+            public override bool ConnectionStringExists(string name)
+            {
+                return ConfigurationManager.ConnectionStrings[name] != null;
+            }
+
+            public override string GetConnectionString(string name)
+            {
+                return ConfigurationManager.ConnectionStrings[name].ConnectionString;
+            }
+        }
+
+        public abstract class ConnectionStringImpl
+        {
+            internal ConnectionStringImpl()
+            {
+            }
+
+            public abstract bool ConnectionStringExists(string name);
+            public abstract string GetConnectionString(string name);
         }
     }
 }

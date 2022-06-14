@@ -1,10 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26730.10
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32106.194
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snork.FluentNHibernateTools", "Snork.FluentNHibernateTools\Snork.FluentNHibernateTools.csproj", "{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{AC7419D9-6192-448C-A883-32C83824E5ED}"
 	ProjectSection(SolutionItems) = preProject
 		..\.gitattributes = ..\.gitattributes
@@ -16,16 +14,24 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{
 		..\nuspecs\Snork.FluentNHibernateTools.nuspec = ..\nuspecs\Snork.FluentNHibernateTools.nuspec
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snork.FluentNHibernateTools", "Snork.FluentNHibernateTools\Snork.FluentNHibernateTools.csproj", "{44472E5D-9A17-4C00-A2FA-A56D9DEA1B39}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snork.FluentNHibernateTools.Tests", "Snork.FluentNHibernateTools.Tests\Snork.FluentNHibernateTools.Tests.csproj", "{99D6EE83-B363-42CF-8CF8-949ADC978BEC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C3A3C91F-71AE-4A9F-88BF-7662B2C60F95}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44472E5D-9A17-4C00-A2FA-A56D9DEA1B39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44472E5D-9A17-4C00-A2FA-A56D9DEA1B39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44472E5D-9A17-4C00-A2FA-A56D9DEA1B39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44472E5D-9A17-4C00-A2FA-A56D9DEA1B39}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99D6EE83-B363-42CF-8CF8-949ADC978BEC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99D6EE83-B363-42CF-8CF8-949ADC978BEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99D6EE83-B363-42CF-8CF8-949ADC978BEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99D6EE83-B363-42CF-8CF8-949ADC978BEC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

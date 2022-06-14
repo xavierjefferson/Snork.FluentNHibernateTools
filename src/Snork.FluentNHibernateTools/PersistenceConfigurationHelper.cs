@@ -8,8 +8,8 @@ namespace Snork.FluentNHibernateTools
     public class PersistenceConfigurationHelper
     {
         /// <summary>
-        /// This method uses some reflection tricks to get the connection string and default schema from an instance of
-        /// IPersistenceConfigurer
+        ///     This method uses some reflection tricks to get the connection string and default schema from an instance of
+        ///     IPersistenceConfigurer
         /// </summary>
         /// <param name="configurer"></param>
         /// <returns></returns>
@@ -17,7 +17,7 @@ namespace Snork.FluentNHibernateTools
         {
             var toPropertiesMethodName =
                 nameof(Tmp.ToProperties);
-
+            IDictionary<string, string> properties = null;
 
             var genericBaseType = configurer.GetType().GetBaseTypes().FirstOrDefault(x =>
                 x.IsGenericType &&
@@ -29,20 +29,19 @@ namespace Snork.FluentNHibernateTools
 
                 var methodInfo = genericType.GetMethod(toPropertiesMethodName);
                 if (methodInfo != null && methodInfo.GetParameters().Length == 0)
-                {
-                    var result = new DerivedInfo();
-                    var dictionary = methodInfo.Invoke(configurer, null) as IDictionary<string, string>;
-                    if (dictionary != null)
-                    {
-                        result.ConnectionString = dictionary[Tmp.ConnectionStringKey];
-                        if (dictionary.ContainsKey(Tmp.DefaultSchemaKey))
-                        {
-                            result.DefaultSchema = dictionary[Tmp.DefaultSchemaKey];
-                        }
-                    }
+                    properties = methodInfo.Invoke(configurer, null) as IDictionary<string, string>;
+            }
 
-                    return result;
-                }
+            if (properties != null)
+            {
+                var result = new DerivedInfo();
+                if (properties.ContainsKey(Tmp.ConnectionStringKey))
+                    result.ConnectionString = properties[Tmp.ConnectionStringKey];
+                if (properties.ContainsKey(Tmp.DefaultSchemaKey))
+                    result.DefaultSchema = properties[Tmp.DefaultSchemaKey];
+                if (properties.ContainsKey(Tmp.DialectKey)) result.Dialect = properties[Tmp.DialectKey];
+                if (properties.ContainsKey(Tmp.DriverClassKey)) result.Driver = properties[Tmp.DriverClassKey];
+                return result;
             }
 
             return null;
@@ -59,6 +58,13 @@ namespace Snork.FluentNHibernateTools
             public new const string DefaultSchemaKey =
                 PersistenceConfiguration<SQLAnywhereConfiguration, SybaseSQLAnywhereConnectionStringBuilder>
                     .DefaultSchemaKey;
+
+            public new const string DialectKey =
+                PersistenceConfiguration<SQLAnywhereConfiguration, SybaseSQLAnywhereConnectionStringBuilder>.DialectKey;
+
+            public new const string DriverClassKey =
+                PersistenceConfiguration<SQLAnywhereConfiguration, SybaseSQLAnywhereConnectionStringBuilder>
+                    .DriverClassKey;
         }
     }
 }

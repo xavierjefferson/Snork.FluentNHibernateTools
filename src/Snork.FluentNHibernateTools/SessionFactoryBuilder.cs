@@ -128,13 +128,13 @@ namespace Snork.FluentNHibernateTools
                         if (schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
                         {
                             var exceptions = schemaUpdate.Exceptions.ToList();
-                            if (providerType == ProviderTypeEnum.SQLite)
+                            /*if (providerType == ProviderTypeEnum.SQLite)
                             {
                                 //ignore sqlite existing index messages
                                 var regex = new Regex("index [a-z0-9][a-z0-9_]* already exists",
                                     RegexOptions.IgnoreCase);
                                 exceptions.RemoveAll(i => regex.IsMatch(i.Message));
-                            }
+                            }*/
 
                             if (exceptions.Any())
                                 throw new SchemaException(
@@ -176,6 +176,7 @@ namespace Snork.FluentNHibernateTools
             options = options ?? new FluentNHibernatePersistenceBuilderOptions();
             Func<ConfigurationInfo> configFunc = () => FluentNHibernatePersistenceBuilder.Build(providerType,
                 nameOrConnectionString, options);
+            
             var keyInfo = new KeyInfo
             {
                 ProviderType = providerType,

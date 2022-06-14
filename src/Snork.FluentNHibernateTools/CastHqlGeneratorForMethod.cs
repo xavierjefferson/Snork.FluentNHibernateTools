@@ -5,6 +5,7 @@ using NHibernate.Hql.Ast;
 using NHibernate.Linq;
 using NHibernate.Linq.Functions;
 using NHibernate.Linq.Visitors;
+using NHibernate.Util;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -12,7 +13,7 @@ namespace Snork.FluentNHibernateTools
     {
         public CastHqlGeneratorForMethod()
         {
-            SupportedMethods = new[] {ReflectionHelper.GetMethodDefinition(() => ObjectExtensions.Cast<object>(null))};
+            SupportedMethods = new[] {ReflectHelper.GetMethodDefinition(() => ObjectExtensions.Cast<object>(null))};
         }
 
         public override HqlTreeNode BuildHql(MethodInfo method, Expression targetObject,

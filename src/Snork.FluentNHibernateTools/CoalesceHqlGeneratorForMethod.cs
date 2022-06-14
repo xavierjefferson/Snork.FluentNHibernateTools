@@ -5,6 +5,7 @@ using NHibernate.Hql.Ast;
 using NHibernate.Linq;
 using NHibernate.Linq.Functions;
 using NHibernate.Linq.Visitors;
+using NHibernate.Util;
 
 namespace Snork.FluentNHibernateTools
 {
@@ -13,7 +14,7 @@ namespace Snork.FluentNHibernateTools
         public CoalesceHqlGeneratorForMethod()
         {
             SupportedMethods = new[]
-                {ReflectionHelper.GetMethodDefinition(() => ObjectExtensions.Coalesce<object>(null, null))};
+                {ReflectHelper.GetMethodDefinition(() => ObjectExtensions.Coalesce<object>(null, null))};
         }
 
         public override HqlTreeNode BuildHql(MethodInfo method, Expression targetObject,
