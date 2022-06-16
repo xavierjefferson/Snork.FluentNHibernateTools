@@ -5,6 +5,7 @@
         None,
         Table,
         ForeignKey,
-        UniqueKey
+        UniqueKey,
+        Index
     }
 }
