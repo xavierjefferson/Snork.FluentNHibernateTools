@@ -66,5 +66,7 @@ namespace Snork.FluentNHibernateTools
                 PersistenceConfiguration<SQLAnywhereConfiguration, SybaseSQLAnywhereConnectionStringBuilder>
                     .DriverClassKey;
         }
+
+      
     }
 }

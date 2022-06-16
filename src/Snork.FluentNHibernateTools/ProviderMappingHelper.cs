@@ -73,8 +73,8 @@ namespace Snork.FluentNHibernateTools
                 return ProviderTypeEnum.None;
 
 
-            var mapping = DeriveProviderType(sessionFactoryImpl.Dialect.GetType()?.AssemblyQualifiedName,
-                sessionFactoryImpl.ConnectionProvider?.Driver?.GetType()?.AssemblyQualifiedName);
+            var mapping = DeriveProviderType(sessionFactoryImpl.Dialect.GetType().AssemblyQualifiedName,
+                sessionFactoryImpl.ConnectionProvider?.Driver?.GetType().AssemblyQualifiedName);
             return mapping;
         }
 

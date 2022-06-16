@@ -2,7 +2,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using NHibernate.Hql.Ast;
-using NHibernate.Linq;
 using NHibernate.Linq.Functions;
 using NHibernate.Linq.Visitors;
 using NHibernate.Util;
@@ -19,7 +18,7 @@ namespace Snork.FluentNHibernateTools
         public override HqlTreeNode BuildHql(MethodInfo method, Expression targetObject,
             ReadOnlyCollection<Expression> arguments, HqlTreeBuilder treeBuilder, IHqlExpressionVisitor visitor)
         {
-            return (treeBuilder.Cast(visitor.Visit(arguments[0]).AsExpression(), method.ReturnType));
+            return treeBuilder.Cast(visitor.Visit(arguments[0]).AsExpression(), method.ReturnType);
         }
     }
 }

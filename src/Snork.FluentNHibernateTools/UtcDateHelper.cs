@@ -64,6 +64,7 @@ namespace Snork.FluentNHibernateTools
             }
             catch
             {
+                // ignored
             }
 
             return false;
@@ -132,7 +133,7 @@ namespace Snork.FluentNHibernateTools
                             case ProviderTypeEnum.MsSql2005:
                             case ProviderTypeEnum.MsSql2008:
                             case ProviderTypeEnum.MsSql2012:
-                                if (session.Connection.DataSource.StartsWith(".")) return TimeSpan.Zero;
+                                if (session.Connection.DataSource != null && session.Connection.DataSource.StartsWith(".")) return TimeSpan.Zero;
                                 query = session.CreateSQLQuery("select getutcdate()");
                                 break;
                             case ProviderTypeEnum.DB2Standard:

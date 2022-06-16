@@ -4,7 +4,7 @@
     {
         public static T Coalesce<T>(this T obj, T fallback) where T : class
         {
-            return (obj == null ? fallback : obj);
+            return obj ?? fallback;
         }
 
         public static TTarget Cast<TTarget>(this object source)

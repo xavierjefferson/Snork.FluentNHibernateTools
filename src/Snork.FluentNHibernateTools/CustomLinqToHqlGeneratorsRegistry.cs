@@ -1,5 +1,4 @@
-﻿using NHibernate.Linq;
-using NHibernate.Linq.Functions;
+﻿using NHibernate.Linq.Functions;
 using NHibernate.Util;
 
 namespace Snork.FluentNHibernateTools

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using FluentNHibernate.Cfg;
 using FluentNHibernate.Cfg.Db;
 using Newtonsoft.Json;
@@ -28,20 +27,21 @@ namespace Snork.FluentNHibernateTools
         {
             // step 1, calculate Sha512 hash from input
 
-            var sha512 = SHA512.Create();
+            using (var sha512 = SHA512.Create())
+            {
+                var inputBytes = Encoding.ASCII.GetBytes(input);
 
-            var inputBytes = Encoding.ASCII.GetBytes(input);
+                var hash = sha512.ComputeHash(inputBytes);
 
-            var hash = sha512.ComputeHash(inputBytes);
+                // step 2, convert byte array to hex string
 
-            // step 2, convert byte array to hex string
+                var sb = new StringBuilder();
 
-            var sb = new StringBuilder();
+                foreach (var t in hash)
+                    sb.Append(t.ToString("X2"));
 
-            foreach (var t in hash)
-                sb.Append(t.ToString("X2"));
-
-            return sb.ToString();
+                return sb.ToString();
+            }
         }
 
         public static SessionFactoryInfo GetByKey(string key)
@@ -126,27 +126,13 @@ namespace Snork.FluentNHibernateTools
                         }
 
                         if (schemaUpdate.Exceptions != null && schemaUpdate.Exceptions.Any())
-                        {
-                            var exceptions = schemaUpdate.Exceptions.ToList();
-                            /*if (providerType == ProviderTypeEnum.SQLite)
-                            {
-                                //ignore sqlite existing index messages
-                                var regex = new Regex("index [a-z0-9][a-z0-9_]* already exists",
-                                    RegexOptions.IgnoreCase);
-                                exceptions.RemoveAll(i => regex.IsMatch(i.Message));
-                            }*/
-
-                            if (exceptions.Any())
+                            if (schemaUpdate.Exceptions.Any())
                                 throw new SchemaException(
                                     string.Format("Schema update failed with {1} exceptions.  See {0} property",
-                                        nameof(SchemaException.Exceptions), exceptions.Count),
-                                    exceptions);
-                        }
+                                        nameof(SchemaException.Exceptions), schemaUpdate.Exceptions.ToList().Count),
+                                    schemaUpdate.Exceptions.ToList());
                     }
                 });
-
-                //configuration.BuildConfiguration();
-
 
                 SessionFactoryInfos[key] = new SessionFactoryInfo(key, configuration.BuildSessionFactory(),
                     providerType, options);
@@ -176,7 +162,7 @@ namespace Snork.FluentNHibernateTools
             options = options ?? new FluentNHibernatePersistenceBuilderOptions();
             Func<ConfigurationInfo> configFunc = () => FluentNHibernatePersistenceBuilder.Build(providerType,
                 nameOrConnectionString, options);
-            
+
             var keyInfo = new KeyInfo
             {
                 ProviderType = providerType,
