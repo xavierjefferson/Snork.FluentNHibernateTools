@@ -66,6 +66,11 @@ namespace Snork.FluentNHibernateTools
             return mapping?.ProviderType ?? ProviderTypeEnum.None;
         }
 
+        public static Dialect GetDialect(this ISessionFactory sessionFactory)
+        {
+            return (sessionFactory as SessionFactoryImpl)?.Dialect;
+        }
+
         public static ProviderTypeEnum DeriveProviderType(this ISessionFactory sessionFactory)
         {
             var sessionFactoryImpl = sessionFactory as SessionFactoryImpl;

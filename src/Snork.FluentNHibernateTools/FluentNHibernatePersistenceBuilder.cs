@@ -2,6 +2,7 @@
 using System.Configuration;
 using FluentNHibernate.Cfg.Db;
 using Microsoft.Extensions.Configuration;
+using NHibernate.Driver;
 
 namespace Snork.FluentNHibernateTools
 {
