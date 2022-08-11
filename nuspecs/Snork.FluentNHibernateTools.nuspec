@@ -3,7 +3,7 @@
 <package>
 	<metadata>
 		<id>Snork.FluentNHibernateTools</id>
-		<version>2.0.4</version>
+		<version>2.1.1470</version>
 		<authors>Xavier Jefferson</authors>
 		<owners>XavierJefferson</owners>
 		<licenseUrl>https://www.gnu.org/licenses/lgpl-3.0.en.html</licenseUrl>
@@ -12,7 +12,7 @@
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<description>Utilities for FluentNHibernate</description>
 		<releaseNotes>
-			Update for Newtonsoft.Json vulnerability
+			Allow logging sql to console
 		</releaseNotes>
 		<copyright>Copyright © 2020-2022 Xavier Jefferson</copyright>
 		<tags>fluentnhibernate</tags>

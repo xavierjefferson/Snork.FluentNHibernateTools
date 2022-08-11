@@ -25,5 +25,9 @@ namespace Snork.FluentNHibernateTools
         /// </summary>
         [JsonIgnore]
         public virtual IObjectRenamer ObjectRenamer { get; set; }
+
+
+        public bool LogSqlInConsole { get; set; }
+        public bool LogFormattedSql { get; set; }
     }
 }

@@ -108,6 +108,11 @@ namespace Snork.FluentNHibernateTools
 
                     objectNameStore.RenameObjects(options, cfg);
 
+                    cfg.DataBaseIntegration(act =>
+                    {
+                        act.LogFormattedSql = options.LogFormattedSql;
+                        act.LogSqlInConsole = options.LogSqlInConsole;
+                    });
 
                     if (options.UpdateSchema)
                     {
